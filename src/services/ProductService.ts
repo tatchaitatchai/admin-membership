@@ -112,6 +112,77 @@ export async function apiDeleteCategory(categoryId: number) {
     })
 }
 
+// --- Branch Products ---
+const BRANCH_PRODUCT_API_PREFIX = 'api/v2/branch-products'
+
+export type BranchProductListItem = {
+    id: number
+    branch_id: number
+    branch_name: string
+    product_id: number
+    product_name: string
+    category_name: string | null
+    image_path: string | null
+    base_price: string
+    is_active: boolean
+    on_stock: number
+    reorder_level: number
+    created_at: string
+}
+
+export async function apiListBranchProducts(params?: {
+    page?: number
+    limit?: number
+    search?: string
+    branch_id?: number
+}) {
+    return ApiService.fetchData<PaginatedResponse<BranchProductListItem>>({
+        url: BRANCH_PRODUCT_API_PREFIX,
+        method: 'get',
+        params: params as Record<string, unknown>,
+    })
+}
+
+export async function apiGetBranchProduct(id: number) {
+    return ApiService.fetchData<BranchProductListItem>({
+        url: `${BRANCH_PRODUCT_API_PREFIX}/${id}`,
+        method: 'get',
+    })
+}
+
+export async function apiCreateBranchProduct(data: {
+    branch_id: number
+    product_id: number
+    on_stock: number
+    reorder_level?: number
+    is_active?: boolean
+}) {
+    return ApiService.fetchData<{ id: number }>({
+        url: BRANCH_PRODUCT_API_PREFIX,
+        method: 'post',
+        data,
+    })
+}
+
+export async function apiUpdateBranchProduct(id: number, data: {
+    on_stock?: number
+    reorder_level?: number
+    is_active?: boolean
+}) {
+    return ApiService.fetchData<{ message: string }>({
+        url: `${BRANCH_PRODUCT_API_PREFIX}/${id}`,
+        method: 'put',
+        data,
+    })
+}
+
+export async function apiDeleteBranchProduct(id: number) {
+    return ApiService.fetchData<{ message: string }>({
+        url: `${BRANCH_PRODUCT_API_PREFIX}/${id}`,
+        method: 'delete',
+    })
+}
+
 export async function apiUploadProductImage(file: File): Promise<{ file_path: string; file_url: string }> {
     const formData = new FormData()
     formData.append('image', file)

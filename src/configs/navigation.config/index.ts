@@ -66,7 +66,16 @@ const navigationConfig: NavigationTree[] = [
                 authority: [],
                 subMenu: [],
             },
-           
+            {
+                key: 'products.branchProducts',
+                path: '/products/branch-products',
+                title: 'สินค้าสาขา',
+                translateKey: 'nav.products.branchProducts',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: [],
+                subMenu: [],
+            },
         ],
     },
     {

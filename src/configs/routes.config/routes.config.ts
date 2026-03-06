@@ -49,6 +49,18 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
+        key: 'products.branchProducts',
+        path: '/products/branch-products',
+        component: lazy(() => import('@/views/products/BranchProductList')),
+        authority: [],
+    },
+    {
+        key: 'products.branchProducts.create',
+        path: '/products/branch-products/create',
+        component: lazy(() => import('@/views/products/BranchProductCreate')),
+        authority: [],
+    },
+    {
         key: 'stock.requisition',
         path: '/stock/requisition',
         component: lazy(() => import('@/views/stock/Requisition')),
