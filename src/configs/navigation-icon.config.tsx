@@ -5,6 +5,8 @@ import {
     PiShoppingBagDuotone,
     PiCubeDuotone,
     PiMegaphoneSimpleDuotone,
+    PiShieldCheckDuotone,
+    PiIdentificationCardDuotone,
 } from 'react-icons/pi'
 import type { JSX } from 'react'
 
@@ -17,6 +19,8 @@ const navigationIcon: NavigationIcons = {
     products: <PiShoppingBagDuotone />,
     stock: <PiCubeDuotone />,
     broadcast: <PiMegaphoneSimpleDuotone />,
+    staffManagement: <PiIdentificationCardDuotone />,
+    permissions: <PiShieldCheckDuotone />,
 }
 
 export default navigationIcon

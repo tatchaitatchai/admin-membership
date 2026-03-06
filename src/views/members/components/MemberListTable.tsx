@@ -96,41 +96,48 @@ const MemberListTable = () => {
                 },
             },
             {
-                header: 'เบอร์โทร',
-                accessorKey: 'phone',
-                cell: (props) => {
-                    return (
-                        <span className="text-gray-500">
-                            {props.row.original.phone}
-                        </span>
-                    )
-                },
+                header: 'เลขสมาชิก',
+                accessorKey: 'membership_number',
+                enableSorting: false,
+                cell: (props) => (
+                    <span className="text-gray-500">
+                        {props.row.original.membership_number || '-'}
+                    </span>
+                ),
+            },
+            {
+                header: 'เบอร์โทร (4 หลัก)',
+                accessorKey: 'last4',
+                enableSorting: false,
+                cell: (props) => (
+                    <span className="text-gray-500">
+                        {props.row.original.last4 || '-'}
+                    </span>
+                ),
             },
             {
                 header: 'สาขา',
                 accessorKey: 'branch',
-                cell: (props) => {
-                    return (
-                        <span className="text-gray-500">
-                            {props.row.original.branch}
-                        </span>
-                    )
-                },
+                enableSorting: false,
+                cell: (props) => (
+                    <span className="text-gray-500">
+                        {props.row.original.branch || '-'}
+                    </span>
+                ),
             },
             {
-                header: 'แต้ม',
-                accessorKey: 'points',
-                cell: (props) => {
-                    return (
-                        <span className="font-semibold text-gray-900 dark:text-gray-100">
-                            {props.row.original.points.toLocaleString()}
-                        </span>
-                    )
-                },
+                header: 'แต้มรวม',
+                accessorKey: 'total_points',
+                cell: (props) => (
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">
+                        {props.row.original.total_points.toLocaleString()}
+                    </span>
+                ),
             },
             {
                 header: 'สถานะ',
                 accessorKey: 'status',
+                enableSorting: false,
                 cell: (props) => {
                     return <StatusColumn row={props.row.original} />
                 },
@@ -138,6 +145,7 @@ const MemberListTable = () => {
             {
                 header: 'จัดการ',
                 id: 'action',
+                enableSorting: false,
                 cell: (props) => (
                     <ActionColumn
                         onEdit={() => handleEdit(props.row.original)}
@@ -146,6 +154,7 @@ const MemberListTable = () => {
                 ),
             },
         ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [],
     )
 

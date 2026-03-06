@@ -6,14 +6,6 @@ import {
 } from '@/constants/api.constant'
 import { useAuthStore } from '@/store/authStore'
 
-const AUTH_DEBUG = false
-
-function debugLog(...args: unknown[]) {
-    if (AUTH_DEBUG) {
-        console.log('[AUTH:http]', ...args)
-    }
-}
-
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
 const UNAUTHORIZED_CODES = [401, 419, 440]
@@ -37,9 +29,6 @@ const http = ky.create({
         afterResponse: [
             (_request, _options, response) => {
                 if (UNAUTHORIZED_CODES.includes(response.status)) {
-                    debugLog(
-                        `401 intercepted: ${response.url} → triggering logout`,
-                    )
                     useAuthStore.getState().logout()
                 }
                 return response

@@ -1,17 +1,15 @@
 import ApiService from './ApiService'
 import type { TableQueries } from '@/@types/common'
-import type { GetMembersResponse, MemberFields } from '@/views/members/types'
+import type { MemberListResponse, MemberFields } from '@/views/members/types'
 
 export async function apiGetMembersList(params: TableQueries) {
-    return ApiService.fetchData<{ data: GetMembersResponse }>({
+    return ApiService.fetchData<MemberListResponse>({
         url: 'api/v1/members',
         method: 'get',
         params: {
             page: params.pageIndex,
             limit: params.pageSize,
-            query: params.query,
-            sort_key: params.sort?.key,
-            sort_order: params.sort?.order,
+            search: params.query,
         },
     })
 }

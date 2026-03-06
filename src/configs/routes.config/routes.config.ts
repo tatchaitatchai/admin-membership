@@ -25,9 +25,27 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
-        key: 'products',
+        key: 'products.list',
         path: '/products',
         component: lazy(() => import('@/views/products/ProductList')),
+        authority: [],
+    },
+    {
+        key: 'products.create',
+        path: '/products/create',
+        component: lazy(() => import('@/views/products/ProductCreate')),
+        authority: [],
+    },
+    {
+        key: 'products.edit',
+        path: '/products/:id/edit',
+        component: lazy(() => import('@/views/products/ProductEdit')),
+        authority: [],
+    },
+    {
+        key: 'products.categories',
+        path: '/products/categories',
+        component: lazy(() => import('@/views/products/CategoryList')),
         authority: [],
     },
     {
@@ -70,6 +88,24 @@ export const protectedRoutes: Routes = [
         key: 'permissions.groups.detail',
         path: '/permissions/groups/:id',
         component: lazy(() => import('@/views/permissions/PermissionGroupDetail')),
+        authority: [],
+    },
+    {
+        key: 'staffManagement',
+        path: '/staff-management',
+        component: lazy(() => import('@/views/staff-management/StaffList')),
+        authority: [],
+    },
+    {
+        key: 'staffManagement.create',
+        path: '/staff-management/create',
+        component: lazy(() => import('@/views/staff-management/StaffCreate')),
+        authority: [],
+    },
+    {
+        key: 'staffManagement.edit',
+        path: '/staff-management/:id/edit',
+        component: lazy(() => import('@/views/staff-management/StaffEdit')),
         authority: [],
     },
     ...othersRoute,

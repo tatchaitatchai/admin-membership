@@ -30,6 +30,15 @@ export async function apiSignOut() {
     })
 }
 
+export async function apiSignOutWithToken(token: string) {
+    const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
+    const { default: ky } = await import('ky')
+    return ky.post(endpointConfig.signOut, {
+        prefixUrl: BASE_URL,
+        headers: { Authorization: `Bearer ${token}` },
+    }).catch(() => {})
+}
+
 export async function apiForgotPassword<T>(data: ForgotPassword) {
     return ApiService.fetchData<T>({
         url: endpointConfig.forgotPassword,

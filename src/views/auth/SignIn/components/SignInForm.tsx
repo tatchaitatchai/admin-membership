@@ -3,18 +3,15 @@ import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
 import { FormItem, Form } from '@/components/ui/Form'
 import PasswordInput from '@/components/shared/PasswordInput'
-import classNames from '@/utils/classNames'
 import { useAuth } from '@/auth'
 import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import type { ZodType } from 'zod'
 import type { CommonProps } from '@/@types/common'
-import type { ReactNode } from 'react'
 
 interface SignInFormProps extends CommonProps {
     disableSubmit?: boolean
-    passwordHint?: string | ReactNode
     setMessage?: (message: string) => void
 }
 
@@ -25,17 +22,17 @@ type SignInFormSchema = {
 
 const validationSchema: ZodType<SignInFormSchema> = z.object({
     email: z
-        .string({ required_error: 'Please enter your email' })
-        .min(1, { message: 'Please enter your email' }),
+        .string({ required_error: 'กรุณากรอกอีเมล' })
+        .min(1, { message: 'กรุณากรอกอีเมล' }),
     password: z
-        .string({ required_error: 'Please enter your password' })
-        .min(1, { message: 'Please enter your password' }),
+        .string({ required_error: 'กรุณากรอกรหัสผ่าน' })
+        .min(1, { message: 'กรุณากรอกรหัสผ่าน' }),
 })
 
 const SignInForm = (props: SignInFormProps) => {
     const [isSubmitting, setSubmitting] = useState<boolean>(false)
 
-    const { disableSubmit = false, className, setMessage, passwordHint } = props
+    const { disableSubmit = false, className, setMessage } = props
 
     const {
         handleSubmit,
@@ -71,7 +68,7 @@ const SignInForm = (props: SignInFormProps) => {
         <div className={className}>
             <Form onSubmit={handleSubmit(onSignIn)}>
                 <FormItem
-                    label="Email"
+                    label="อีเมล"
                     invalid={Boolean(errors.email)}
                     errorMessage={errors.email?.message}
                 >
@@ -81,7 +78,7 @@ const SignInForm = (props: SignInFormProps) => {
                         render={({ field }) => (
                             <Input
                                 type="email"
-                                placeholder="Email"
+                                placeholder="อีเมล"
                                 autoComplete="off"
                                 {...field}
                             />
@@ -89,13 +86,9 @@ const SignInForm = (props: SignInFormProps) => {
                     />
                 </FormItem>
                 <FormItem
-                    label="Password"
+                    label="รหัสผ่าน"
                     invalid={Boolean(errors.password)}
                     errorMessage={errors.password?.message}
-                    className={classNames(
-                        passwordHint ? 'mb-0' : '',
-                        errors.password?.message ? 'mb-8' : '',
-                    )}
                 >
                     <Controller
                         name="password"
@@ -104,21 +97,20 @@ const SignInForm = (props: SignInFormProps) => {
                         render={({ field }) => (
                             <PasswordInput
                                 type="text"
-                                placeholder="Password"
+                                placeholder="รหัสผ่าน"
                                 autoComplete="off"
                                 {...field}
                             />
                         )}
                     />
                 </FormItem>
-                {passwordHint}
                 <Button
                     block
                     loading={isSubmitting}
                     variant="solid"
                     type="submit"
                 >
-                    {isSubmitting ? 'Signing in...' : 'Sign In'}
+                    {isSubmitting ? 'กำลังเข้าสู่ระบบ...' : 'เข้าสู่ระบบ'}
                 </Button>
             </Form>
         </div>

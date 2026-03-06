@@ -65,13 +65,14 @@ function AuthProvider({ children }: AuthProviderProps) {
         try {
             const resp = await apiSignIn({ ...values, source: 'web' })
             if (resp?.session_token) {
+                const perms = resp.permissions ?? []
                 loginSuccess(resp.session_token, {
                     userName: resp.store_name,
-                    authority: ['admin'],
+                    authority: perms,
                     storeId: resp.store_id,
                     storeName: resp.store_name,
                     branchId: resp.branch_id ?? undefined,
-                })
+                }, perms)
                 redirect()
                 return {
                     status: 'success',

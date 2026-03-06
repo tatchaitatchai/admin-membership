@@ -11,6 +11,7 @@ export type SignInResponse = {
     store_id: number
     branch_id?: number | null
     store_name: string
+    permissions: string[]
     expires_at: string
 }
 

@@ -15,10 +15,23 @@ export async function apiGetAllPermissions() {
     })
 }
 
-export async function apiGetGroups() {
-    return ApiService.fetchData<PermissionGroupDTO[]>({
+export type PaginatedResponse<T> = {
+    data: T[]
+    total: number
+    page: number
+    limit: number
+    total_pages: number
+}
+
+export async function apiGetGroups(params?: {
+    page?: number
+    limit?: number
+    search?: string
+}) {
+    return ApiService.fetchData<PaginatedResponse<PermissionGroupDTO>>({
         url: `${API_PREFIX}/groups`,
         method: 'get',
+        params: params as Record<string, unknown>,
     })
 }
 

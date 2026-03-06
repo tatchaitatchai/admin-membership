@@ -9,12 +9,9 @@ interface LogoProps extends CommonProps {
     logoWidth?: number | string
 }
 
-const LOGO_SRC_PATH = '/img/logo/'
-
 const Logo = (props: LogoProps) => {
     const {
         type = 'full',
-        mode = 'light',
         className,
         imgClass,
         style,
@@ -29,11 +26,19 @@ const Logo = (props: LogoProps) => {
                 ...{ width: logoWidth },
             }}
         >
-            <img
-                className={imgClass}
-                src={`${LOGO_SRC_PATH}logo-${mode}-${type}.png`}
-                alt={`${APP_NAME} logo`}
-            />
+            <div className={classNames('flex items-center gap-2', imgClass)}>
+                <img
+                    className="rounded-lg"
+                    src="/img/logo/posme-icon.png"
+                    alt={`${APP_NAME} logo`}
+                    style={{ height: 32, width: 32 }}
+                />
+                {type === 'full' && (
+                    <span className="font-bold text-lg heading-text whitespace-nowrap">
+                        POS <span className="text-orange-500">ME</span>
+                    </span>
+                )}
+            </div>
         </div>
     )
 }

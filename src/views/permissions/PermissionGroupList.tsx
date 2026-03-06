@@ -1,14 +1,15 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Container from '@/components/shared/Container'
 import AdaptiveCard from '@/components/shared/AdaptiveCard'
 import Button from '@/components/ui/Button'
-import Table from '@/components/ui/Table'
 import Dialog from '@/components/ui/Dialog'
 import Input from '@/components/ui/Input'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
-import { TbPlus, TbTrash, TbEdit } from 'react-icons/tb'
+import DataTable from '@/components/shared/DataTable'
+import type { ColumnDef } from '@/components/shared/DataTable'
+import { TbPlus, TbTrash, TbEdit, TbSearch } from 'react-icons/tb'
 import {
     apiGetGroups,
     apiCreateGroup,
@@ -16,12 +17,14 @@ import {
 } from '@/services/PermissionService'
 import type { PermissionGroupDTO } from './types'
 
-const { Tr, Th, Td, THead, TBody } = Table
-
 const PermissionGroupList = () => {
     const navigate = useNavigate()
     const [groups, setGroups] = useState<PermissionGroupDTO[]>([])
     const [loading, setLoading] = useState(true)
+    const [total, setTotal] = useState(0)
+    const [pageIndex, setPageIndex] = useState(1)
+    const [pageSize, setPageSize] = useState(10)
+    const [search, setSearch] = useState('')
     const [createOpen, setCreateOpen] = useState(false)
     const [deleteOpen, setDeleteOpen] = useState(false)
     const [deleteTarget, setDeleteTarget] = useState<PermissionGroupDTO | null>(null)
@@ -31,8 +34,13 @@ const PermissionGroupList = () => {
     const fetchGroups = useCallback(async () => {
         setLoading(true)
         try {
-            const data = await apiGetGroups()
-            setGroups(data ?? [])
+            const resp = await apiGetGroups({
+                page: pageIndex,
+                limit: pageSize,
+                search: search || undefined,
+            })
+            setGroups(resp.data ?? [])
+            setTotal(resp.total)
         } catch {
             toast.push(
                 <Notification type="danger" title="Error">
@@ -42,7 +50,7 @@ const PermissionGroupList = () => {
         } finally {
             setLoading(false)
         }
-    }, [])
+    }, [pageIndex, pageSize, search])
 
     useEffect(() => {
         fetchGroups()
@@ -94,6 +102,91 @@ const PermissionGroupList = () => {
         }
     }
 
+    const columns: ColumnDef<PermissionGroupDTO>[] = useMemo(
+        () => [
+            {
+                header: 'ชื่อกลุ่ม',
+                accessorKey: 'name',
+                cell: (props) => (
+                    <div>
+                        <span className="font-semibold">
+                            {props.row.original.name}
+                        </span>
+                        {props.row.original.is_default && (
+                            <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
+                                Default
+                            </span>
+                        )}
+                    </div>
+                ),
+            },
+            {
+                header: 'คำอธิบาย',
+                accessorKey: 'description',
+                enableSorting: false,
+                cell: (props) => (
+                    <span className="text-gray-500">
+                        {props.row.original.description || '-'}
+                    </span>
+                ),
+            },
+            {
+                header: 'จำนวนพนักงาน',
+                accessorKey: 'staff_count',
+                enableSorting: false,
+                cell: (props) => (
+                    <span>{props.row.original.staff_count} คน</span>
+                ),
+            },
+            {
+                header: 'จัดการ',
+                id: 'action',
+                enableSorting: false,
+                cell: (props) => {
+                    const g = props.row.original
+                    return (
+                        <div className="flex gap-2">
+                            <Button
+                                size="xs"
+                                variant="plain"
+                                icon={<TbEdit />}
+                                onClick={() =>
+                                    navigate(`/permissions/groups/${g.id}`)
+                                }
+                            />
+                            <Button
+                                size="xs"
+                                variant="plain"
+                                icon={<TbTrash />}
+                                className="text-red-500 hover:text-red-600"
+                                onClick={() => {
+                                    setDeleteTarget(g)
+                                    setDeleteOpen(true)
+                                }}
+                            />
+                        </div>
+                    )
+                },
+            },
+        ],
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [],
+    )
+
+    const handlePaginationChange = (page: number) => {
+        setPageIndex(page)
+    }
+
+    const handleSelectChange = (value: number) => {
+        setPageSize(value)
+        setPageIndex(1)
+    }
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearch(e.target.value)
+        setPageIndex(1)
+    }
+
     return (
         <Container>
             <AdaptiveCard>
@@ -109,69 +202,29 @@ const PermissionGroupList = () => {
                             สร้างกลุ่มใหม่
                         </Button>
                     </div>
-
-                    {loading ? (
-                        <div className="flex justify-center py-8">
-                            <span className="text-gray-400">กำลังโหลด...</span>
-                        </div>
-                    ) : groups.length === 0 ? (
-                        <div className="flex justify-center py-8">
-                            <span className="text-gray-400">ยังไม่มีกลุ่มสิทธิ์</span>
-                        </div>
-                    ) : (
-                        <Table>
-                            <THead>
-                                <Tr>
-                                    <Th>ชื่อกลุ่ม</Th>
-                                    <Th>คำอธิบาย</Th>
-                                    <Th>จำนวนพนักงาน</Th>
-                                    <Th className="w-[120px]">จัดการ</Th>
-                                </Tr>
-                            </THead>
-                            <TBody>
-                                {groups.map((g) => (
-                                    <Tr key={g.id}>
-                                        <Td>
-                                            <span className="font-semibold">{g.name}</span>
-                                            {g.is_default && (
-                                                <span className="ml-2 text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full">
-                                                    Default
-                                                </span>
-                                            )}
-                                        </Td>
-                                        <Td>
-                                            <span className="text-gray-500">
-                                                {g.description || '-'}
-                                            </span>
-                                        </Td>
-                                        <Td>{g.staff_count} คน</Td>
-                                        <Td>
-                                            <div className="flex gap-2">
-                                                <Button
-                                                    size="xs"
-                                                    variant="plain"
-                                                    icon={<TbEdit />}
-                                                    onClick={() =>
-                                                        navigate(`/permissions/groups/${g.id}`)
-                                                    }
-                                                />
-                                                <Button
-                                                    size="xs"
-                                                    variant="plain"
-                                                    icon={<TbTrash />}
-                                                    className="text-red-500 hover:text-red-600"
-                                                    onClick={() => {
-                                                        setDeleteTarget(g)
-                                                        setDeleteOpen(true)
-                                                    }}
-                                                />
-                                            </div>
-                                        </Td>
-                                    </Tr>
-                                ))}
-                            </TBody>
-                        </Table>
-                    )}
+                    <div className="flex justify-end">
+                        <Input
+                            className="max-w-[300px]"
+                            size="sm"
+                            placeholder="ค้นหาชื่อกลุ่ม..."
+                            prefix={<TbSearch className="text-lg" />}
+                            value={search}
+                            onChange={handleSearchChange}
+                        />
+                    </div>
+                    <DataTable
+                        columns={columns}
+                        data={groups}
+                        loading={loading}
+                        noData={!loading && groups.length === 0}
+                        pagingData={{
+                            total,
+                            pageIndex,
+                            pageSize,
+                        }}
+                        onPaginationChange={handlePaginationChange}
+                        onSelectChange={handleSelectChange}
+                    />
                 </div>
             </AdaptiveCard>
 

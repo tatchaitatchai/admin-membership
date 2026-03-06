@@ -3,14 +3,6 @@ import { TOKEN_NAME_IN_STORAGE } from '@/constants/api.constant'
 import { clearAllAuthState } from '@/lib/auth/clear-auth'
 import type { AuthStatus, User } from '@/@types/auth'
 
-const AUTH_DEBUG = false
-
-function debugLog(...args: unknown[]) {
-    if (AUTH_DEBUG) {
-        console.log('[AUTH:store]', ...args)
-    }
-}
-
 const LOGOUT_CHANNEL = 'auth:logout'
 let broadcastChannel: BroadcastChannel | null = null
 
@@ -55,34 +47,18 @@ export const useAuthStore = create<AuthState & AuthAction>()((set, get) => ({
     initializeAuth: async () => {
         const { initialized, status } = get()
         if (initialized || status === 'authenticated') {
-            debugLog('Already initialized or authenticated, skipping')
             return
         }
 
-        debugLog('Initializing auth...')
-
         const token = localStorage.getItem(TOKEN_NAME_IN_STORAGE)
         if (!token) {
-            debugLog('No token found → unauthenticated')
             set({ status: 'unauthenticated', initialized: true })
             return
         }
 
         try {
-            const { default: http } = await import('@/services/http')
-            const sessionInfo = await http
-                .get('api/v2/auth/session')
-                .json<{
-                    store_id: number
-                    store_name: string
-                    branch_id?: number | null
-                    branch_name?: string | null
-                    staff_id?: number | null
-                    staff_name?: string | null
-                    permissions: string[]
-                }>()
-
-            debugLog('Session valid:', sessionInfo)
+            const { apiGetSession } = await import('@/services/AuthService')
+            const sessionInfo = await apiGetSession()
 
             const perms = sessionInfo.permissions ?? []
 
@@ -101,7 +77,6 @@ export const useAuthStore = create<AuthState & AuthAction>()((set, get) => ({
                 },
             })
         } catch {
-            debugLog('Session invalid → unauthenticated')
             clearAllAuthState()
             set({ status: 'unauthenticated', initialized: true })
         }
@@ -113,7 +88,6 @@ export const useAuthStore = create<AuthState & AuthAction>()((set, get) => ({
         })),
 
     loginSuccess: (token, user, permissions) => {
-        debugLog('Login success, storing token')
         localStorage.setItem(TOKEN_NAME_IN_STORAGE, token)
         const perms = permissions ?? []
         set({
@@ -125,22 +99,18 @@ export const useAuthStore = create<AuthState & AuthAction>()((set, get) => ({
     },
 
     logout: () => {
-        if (isLoggingOut) {
-            debugLog('Logout already in progress, skipping')
-            return
-        }
+        if (isLoggingOut) return
         isLoggingOut = true
-        debugLog('Logout triggered')
 
         const token = localStorage.getItem(TOKEN_NAME_IN_STORAGE)
-        if (token) {
-            import('@/services/http').then(({ default: http }) => {
-                http.post('api/v2/auth/logout').catch(() => {
-                })
-            })
-        }
 
         clearAllAuthState()
+
+        if (token) {
+            import('@/services/AuthService').then(({ apiSignOutWithToken }) => {
+                apiSignOutWithToken(token)
+            })
+        }
 
         set({ ...initialState, status: 'unauthenticated', initialized: true })
 
@@ -162,7 +132,6 @@ export const useAuthStore = create<AuthState & AuthAction>()((set, get) => ({
 if (broadcastChannel) {
     broadcastChannel.onmessage = (event) => {
         if (event.data === 'logout') {
-            debugLog('Logout received from another tab')
             clearAllAuthState()
             useAuthStore.setState({
                 ...initialState,
@@ -173,10 +142,8 @@ if (broadcastChannel) {
         }
     }
 } else {
-    // Fallback: listen for localStorage events (cross-tab)
     window.addEventListener('storage', (event) => {
         if (event.key === LOGOUT_CHANNEL && event.newValue) {
-            debugLog('Logout received from another tab (localStorage fallback)')
             clearAllAuthState()
             useAuthStore.setState({
                 ...initialState,
@@ -189,7 +156,6 @@ if (broadcastChannel) {
 }
 
 // ─── Backward-compatible exports for Ecme theme ──────────
-// These bridge the old API so Layout and other theme components keep working.
 export const useSessionUser = useAuthStore
 
 export const useToken = () => {
