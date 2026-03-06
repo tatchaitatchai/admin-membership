@@ -2,11 +2,10 @@ import ApiService from './ApiService'
 import endpointConfig from '@/configs/endpoint.config'
 import type {
     SignInCredential,
-    SignUpCredential,
+    SignInResponse,
+    SessionInfo,
     ForgotPassword,
     ResetPassword,
-    SignInResponse,
-    SignUpResponse,
 } from '@/@types/auth'
 
 export async function apiSignIn(data: SignInCredential) {
@@ -17,11 +16,10 @@ export async function apiSignIn(data: SignInCredential) {
     })
 }
 
-export async function apiSignUp(data: SignUpCredential) {
-    return ApiService.fetchData<SignUpResponse>({
-        url: endpointConfig.signUp,
-        method: 'post',
-        data,
+export async function apiGetSession() {
+    return ApiService.fetchData<SessionInfo>({
+        url: endpointConfig.session,
+        method: 'get',
     })
 }
 

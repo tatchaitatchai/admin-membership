@@ -4,12 +4,19 @@ import {
     TOKEN_TYPE,
     REQUEST_HEADER_AUTH_KEY,
 } from '@/constants/api.constant'
-import { useSessionUser } from '@/store/authStore'
-import appConfig from '@/configs/app.config'
+import { useAuthStore } from '@/store/authStore'
+
+const AUTH_DEBUG = false
+
+function debugLog(...args: unknown[]) {
+    if (AUTH_DEBUG) {
+        console.log('[AUTH:http]', ...args)
+    }
+}
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080'
 
-const unauthorizedCodes = [401, 419, 440]
+const UNAUTHORIZED_CODES = [401, 419, 440]
 
 const http = ky.create({
     prefixUrl: BASE_URL,
@@ -17,13 +24,8 @@ const http = ky.create({
     hooks: {
         beforeRequest: [
             (request) => {
-                const storage = appConfig.accessTokenPersistStrategy
-                let token = ''
-                if (storage === 'localStorage') {
-                    token = localStorage.getItem(TOKEN_NAME_IN_STORAGE) ?? ''
-                } else if (storage === 'sessionStorage') {
-                    token = sessionStorage.getItem(TOKEN_NAME_IN_STORAGE) ?? ''
-                }
+                const token =
+                    localStorage.getItem(TOKEN_NAME_IN_STORAGE) ?? ''
                 if (token) {
                     request.headers.set(
                         REQUEST_HEADER_AUTH_KEY,
@@ -34,11 +36,11 @@ const http = ky.create({
         ],
         afterResponse: [
             (_request, _options, response) => {
-                if (unauthorizedCodes.includes(response.status)) {
-                    localStorage.removeItem(TOKEN_NAME_IN_STORAGE)
-                    sessionStorage.removeItem(TOKEN_NAME_IN_STORAGE)
-                    useSessionUser.getState().setUser({})
-                    useSessionUser.getState().setSessionSignedIn(false)
+                if (UNAUTHORIZED_CODES.includes(response.status)) {
+                    debugLog(
+                        `401 intercepted: ${response.url} → triggering logout`,
+                    )
+                    useAuthStore.getState().logout()
                 }
                 return response
             },

@@ -10,12 +10,12 @@ function useAuthority(
         return authority.some((role) => userAuthority.includes(role))
     }, [authority, userAuthority])
 
-    if (
-        isEmpty(authority) ||
-        isEmpty(userAuthority) ||
-        typeof authority === 'undefined'
-    ) {
+    if (isEmpty(authority) || typeof authority === 'undefined') {
         return !emptyCheck
+    }
+
+    if (isEmpty(userAuthority)) {
+        return false
     }
 
     return roleMatched

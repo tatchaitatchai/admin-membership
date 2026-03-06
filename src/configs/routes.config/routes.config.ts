@@ -60,5 +60,17 @@ export const protectedRoutes: Routes = [
         component: lazy(() => import('@/views/broadcast/Broadcast')),
         authority: [],
     },
+    {
+        key: 'permissions.groups',
+        path: '/permissions/groups',
+        component: lazy(() => import('@/views/permissions/PermissionGroupList')),
+        authority: [],
+    },
+    {
+        key: 'permissions.groups.detail',
+        path: '/permissions/groups/:id',
+        component: lazy(() => import('@/views/permissions/PermissionGroupDetail')),
+        authority: [],
+    },
     ...othersRoute,
 ]

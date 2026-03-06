@@ -9,7 +9,14 @@ import PreLoginLayout from './PreLoginLayout'
 const Layout = ({ children }: CommonProps) => {
     const layoutType = useThemeStore((state) => state.layout.type)
 
-    const { authenticated } = useAuth()
+    const { status } = useAuth()
+    if (status === 'unknown') {
+        return (
+            <div className="flex flex-auto flex-col h-[100vh]">
+                <Loading loading={true} />
+            </div>
+        )
+    }
 
     return (
         <Suspense
@@ -19,7 +26,7 @@ const Layout = ({ children }: CommonProps) => {
                 </div>
             }
         >
-            {authenticated ? (
+            {status === 'authenticated' ? (
                 <PostLoginLayout layoutType={layoutType}>
                     {children}
                 </PostLoginLayout>

@@ -1,8 +1,8 @@
-import { useRef, useImperativeHandle } from 'react'
+import { useRef, useImperativeHandle, useEffect } from 'react'
 import AuthContext from './AuthContext'
 import appConfig from '@/configs/app.config'
-import { useSessionUser, useToken } from '@/store/authStore'
-import { apiSignIn, apiSignOut, apiSignUp } from '@/services/AuthService'
+import { useAuthStore } from '@/store/authStore'
+import { apiSignIn } from '@/services/AuthService'
 import { REDIRECT_URL_KEY } from '@/constants/app.constant'
 import { useNavigate } from 'react-router-dom'
 import type {
@@ -10,8 +10,8 @@ import type {
     SignUpCredential,
     AuthResult,
     OauthSignInCallbackPayload,
-    User,
     Token,
+    User,
 } from '@/@types/auth'
 import type { ReactNode, Ref } from 'react'
 import type { NavigateFunction } from 'react-router-dom'
@@ -25,27 +25,31 @@ export type IsolatedNavigatorRef = {
 const IsolatedNavigator = ({ ref }: { ref: Ref<IsolatedNavigatorRef> }) => {
     const navigate = useNavigate()
 
-    useImperativeHandle(ref, () => {
-        return {
+    useImperativeHandle(
+        ref,
+        () => ({
             navigate,
-        }
-    }, [navigate])
+        }),
+        [navigate],
+    )
 
     return <></>
 }
 
 function AuthProvider({ children }: AuthProviderProps) {
-    const signedIn = useSessionUser((state) => state.session.signedIn)
-    const user = useSessionUser((state) => state.user)
-    const setUser = useSessionUser((state) => state.setUser)
-    const setSessionSignedIn = useSessionUser(
-        (state) => state.setSessionSignedIn,
-    )
-    const { token, setToken } = useToken()
-
-    const authenticated = Boolean(token && signedIn)
+    const status = useAuthStore((s) => s.status)
+    const user = useAuthStore((s) => s.user)
+    const initializeAuth = useAuthStore((s) => s.initializeAuth)
+    const loginSuccess = useAuthStore((s) => s.loginSuccess)
+    const logout = useAuthStore((s) => s.logout)
 
     const navigatorRef = useRef<IsolatedNavigatorRef>(null)
+
+    useEffect(() => {
+        initializeAuth()
+    }, [initializeAuth])
+
+    const authenticated = status === 'authenticated'
 
     const redirect = () => {
         const search = window.location.search
@@ -57,26 +61,17 @@ function AuthProvider({ children }: AuthProviderProps) {
         )
     }
 
-    const handleSignIn = (tokens: Token, user?: User) => {
-        setToken(tokens.accessToken)
-        setSessionSignedIn(true)
-
-        if (user) {
-            setUser(user)
-        }
-    }
-
-    const handleSignOut = () => {
-        setToken('')
-        setUser({})
-        setSessionSignedIn(false)
-    }
-
     const signIn = async (values: SignInCredential): AuthResult => {
         try {
-            const resp = await apiSignIn(values)
-            if (resp) {
-                handleSignIn({ accessToken: resp.token }, resp.user)
+            const resp = await apiSignIn({ ...values, source: 'web' })
+            if (resp?.session_token) {
+                loginSuccess(resp.session_token, {
+                    userName: resp.store_name,
+                    authority: ['admin'],
+                    storeId: resp.store_id,
+                    storeName: resp.store_name,
+                    branchId: resp.branch_id ?? undefined,
+                })
                 redirect()
                 return {
                     status: 'success',
@@ -93,7 +88,7 @@ function AuthProvider({ children }: AuthProviderProps) {
             if (errors?.response) {
                 try {
                     const body = await errors.response.json()
-                    message = body?.message || message
+                    message = body?.error || body?.message || message
                 } catch {
                     // ignore parse error
                 }
@@ -102,49 +97,24 @@ function AuthProvider({ children }: AuthProviderProps) {
         }
     }
 
-    const signUp = async (values: SignUpCredential): AuthResult => {
-        try {
-            const resp = await apiSignUp(values)
-            if (resp) {
-                handleSignIn({ accessToken: resp.token }, resp.user)
-                redirect()
-                return {
-                    status: 'success',
-                    message: '',
-                }
-            }
-            return {
-                status: 'failed',
-                message: 'Unable to sign up',
-            }
-            // eslint-disable-next-line  @typescript-eslint/no-explicit-any
-        } catch (errors: any) {
-            let message = errors.toString()
-            if (errors?.response) {
-                try {
-                    const body = await errors.response.json()
-                    message = body?.message || message
-                } catch {
-                    // ignore parse error
-                }
-            }
-            return { status: 'failed', message }
-        }
+    const signUp = async (_values: SignUpCredential): AuthResult => {
+        return { status: 'failed', message: 'Not implemented' }
     }
 
-    const signOut = async () => {
-        try {
-            await apiSignOut()
-        } finally {
-            handleSignOut()
-            navigatorRef.current?.navigate(appConfig.unAuthenticatedEntryPath)
-        }
+    const signOut = () => {
+        logout()
+        navigatorRef.current?.navigate(appConfig.unAuthenticatedEntryPath)
     }
+
     const oAuthSignIn = (
         callback: (payload: OauthSignInCallbackPayload) => void,
     ) => {
         callback({
-            onSignIn: handleSignIn,
+            onSignIn: (tokens: Token, user?: User) => {
+                if (tokens.accessToken && user) {
+                    loginSuccess(tokens.accessToken, user)
+                }
+            },
             redirect,
         })
     }
@@ -152,6 +122,7 @@ function AuthProvider({ children }: AuthProviderProps) {
     return (
         <AuthContext.Provider
             value={{
+                status,
                 authenticated,
                 user,
                 signIn,

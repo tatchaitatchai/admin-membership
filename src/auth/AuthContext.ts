@@ -3,11 +3,13 @@ import type {
     SignInCredential,
     SignUpCredential,
     AuthResult,
+    AuthStatus,
     User,
     OauthSignInCallbackPayload,
 } from '@/@types/auth'
 
 type Auth = {
+    status: AuthStatus  
     authenticated: boolean
     user: User
     signIn: (values: SignInCredential) => AuthResult
@@ -36,6 +38,7 @@ const defaultOAuthSignInPlaceHolder = (
 }
 
 const AuthContext = createContext<Auth>({
+    status: 'unknown',
     authenticated: false,
     user: {},
     signIn: async () => defaultFunctionPlaceHolder(),

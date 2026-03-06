@@ -14,7 +14,7 @@ const navigationConfig: NavigationTree[] = [
         translateKey: 'nav.dashboard',
         icon: 'dashboard',
         type: NAV_ITEM_TYPE_ITEM,
-        authority: [],
+        authority: ['dashboard:view'],
         subMenu: [],
     },
     {
@@ -24,7 +24,7 @@ const navigationConfig: NavigationTree[] = [
         translateKey: 'nav.members',
         icon: 'members',
         type: NAV_ITEM_TYPE_ITEM,
-        authority: [],
+        authority: ['member:view'],
         subMenu: [],
     },
     {
@@ -34,7 +34,7 @@ const navigationConfig: NavigationTree[] = [
         translateKey: 'nav.branches',
         icon: 'branches',
         type: NAV_ITEM_TYPE_ITEM,
-        authority: [],
+        authority: ['setting:view'],
         subMenu: [],
     },
     {
@@ -44,7 +44,7 @@ const navigationConfig: NavigationTree[] = [
         translateKey: 'nav.products',
         icon: 'products',
         type: NAV_ITEM_TYPE_ITEM,
-        authority: [],
+        authority: ['product:view'],
         subMenu: [],
     },
     {
@@ -106,6 +106,17 @@ const navigationConfig: NavigationTree[] = [
         icon: 'broadcast',
         type: NAV_ITEM_TYPE_ITEM,
         authority: [],
+        subMenu: [],
+    },
+    {
+        key: 'permissions',
+        path: '/permissions/groups',
+        title: 'จัดการสิทธิ์',
+        translateKey: 'nav.permissions',
+        icon: 'permissions',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: [],
+        // authority: ['permission:view'],
         subMenu: [],
     },
 ]
