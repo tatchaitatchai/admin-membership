@@ -67,21 +67,15 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
-        key: 'stock.withdraw',
-        path: '/stock/withdraw',
-        component: lazy(() => import('@/views/stock/Withdraw')),
+        key: 'costCalculation.ingredients',
+        path: '/cost/ingredients',
+        component: lazy(() => import('@/views/cost/IngredientList')),
         authority: [],
     },
     {
-        key: 'stock.receive',
-        path: '/stock/receive',
-        component: lazy(() => import('@/views/stock/Receive')),
-        authority: [],
-    },
-    {
-        key: 'stock.deduction',
-        path: '/stock/deduction',
-        component: lazy(() => import('@/views/stock/Deduction')),
+        key: 'costCalculation.productCost',
+        path: '/cost/product-cost',
+        component: lazy(() => import('@/views/cost/ProductCostList')),
         authority: [],
     },
     {

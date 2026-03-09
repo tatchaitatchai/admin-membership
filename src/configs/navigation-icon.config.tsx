@@ -7,6 +7,7 @@ import {
     PiMegaphoneSimpleDuotone,
     PiShieldCheckDuotone,
     PiIdentificationCardDuotone,
+    PiCalculatorDuotone,
 } from 'react-icons/pi'
 import type { JSX } from 'react'
 
@@ -21,6 +22,7 @@ const navigationIcon: NavigationIcons = {
     broadcast: <PiMegaphoneSimpleDuotone />,
     staffManagement: <PiIdentificationCardDuotone />,
     permissions: <PiShieldCheckDuotone />,
+    costCalculation: <PiCalculatorDuotone />,
 }
 
 export default navigationIcon
