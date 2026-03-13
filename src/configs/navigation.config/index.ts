@@ -34,7 +34,7 @@ const navigationConfig: NavigationTree[] = [
         translateKey: 'nav.branches',
         icon: 'branches',
         type: NAV_ITEM_TYPE_ITEM,
-        authority: ['setting:view'],
+        authority: ['branch:view'],
         subMenu: [],
     },
     {
@@ -53,7 +53,7 @@ const navigationConfig: NavigationTree[] = [
                 translateKey: 'nav.products.categories',
                 icon: '',
                 type: NAV_ITEM_TYPE_ITEM,
-                authority: [],
+                authority: ['product:view'],
                 subMenu: [],
             },
             {
@@ -63,7 +63,7 @@ const navigationConfig: NavigationTree[] = [
                 translateKey: 'nav.products.list',
                 icon: '',
                 type: NAV_ITEM_TYPE_ITEM,
-                authority: [],
+                authority: ['product:view'],
                 subMenu: [],
             },
             {
@@ -73,7 +73,7 @@ const navigationConfig: NavigationTree[] = [
                 translateKey: 'nav.products.branchProducts',
                 icon: '',
                 type: NAV_ITEM_TYPE_ITEM,
-                authority: [],
+                authority: ['product:view'],
                 subMenu: [],
             },
         ],
@@ -85,7 +85,7 @@ const navigationConfig: NavigationTree[] = [
         translateKey: 'nav.stock',
         icon: 'stock',
         type: NAV_ITEM_TYPE_COLLAPSE,
-        authority: [],
+        authority: ['stock:view'],
         subMenu: [
             {
                 key: 'stock.requisition',
@@ -94,7 +94,7 @@ const navigationConfig: NavigationTree[] = [
                 translateKey: 'nav.stock.requisition',
                 icon: '',
                 type: NAV_ITEM_TYPE_ITEM,
-                authority: [],
+                authority: ['stock:view'],
                 subMenu: [],
             },
         ],
@@ -106,7 +106,7 @@ const navigationConfig: NavigationTree[] = [
         translateKey: 'nav.costCalculation',
         icon: 'costCalculation',
         type: NAV_ITEM_TYPE_COLLAPSE,
-        authority: [],
+        authority: ['cost:view'],
         subMenu: [
             {
                 key: 'costCalculation.ingredients',
@@ -115,7 +115,7 @@ const navigationConfig: NavigationTree[] = [
                 translateKey: 'nav.costCalculation.ingredients',
                 icon: '',
                 type: NAV_ITEM_TYPE_ITEM,
-                authority: [],
+                authority: ['ingredient:view'],
                 subMenu: [],
             },
             {
@@ -125,7 +125,7 @@ const navigationConfig: NavigationTree[] = [
                 translateKey: 'nav.costCalculation.productCost',
                 icon: '',
                 type: NAV_ITEM_TYPE_ITEM,
-                authority: [],
+                authority: ['cost:view'],
                 subMenu: [],
             },
         ],
@@ -137,7 +137,7 @@ const navigationConfig: NavigationTree[] = [
         translateKey: 'nav.broadcast',
         icon: 'broadcast',
         type: NAV_ITEM_TYPE_ITEM,
-        authority: [],
+        authority: ['broadcast:view'],
         subMenu: [],
     },
     {
