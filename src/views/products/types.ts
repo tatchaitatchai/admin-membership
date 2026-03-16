@@ -6,6 +6,7 @@ export type ProductFields = {
     image_path: string | null
     is_active: boolean
     base_price: string
+    points_to_redeem: number | null
     created_at: string
 }
 
@@ -19,6 +20,7 @@ export type ProductDetail = {
     sku: string | null
     barcode: string | null
     base_price: string
+    points_to_redeem: number | null
     created_at: string
     updated_at: string
 }
@@ -34,6 +36,7 @@ export type CreateProductPayload = {
     image_path?: string | null
     base_price: number
     is_active?: boolean
+    points_to_redeem?: number | null
 }
 
 export type UpdateProductPayload = {
@@ -42,6 +45,7 @@ export type UpdateProductPayload = {
     image_path?: string | null
     base_price?: number
     is_active?: boolean
+    points_to_redeem?: number | null
 }
 
 export type Filter = {

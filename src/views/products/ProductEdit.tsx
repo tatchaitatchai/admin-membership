@@ -26,6 +26,7 @@ const schema = z.object({
     product_name: z.string().min(1, 'กรุณากรอกชื่อสินค้า'),
     category_id: z.number().nullable(),
     base_price: z.number().min(0, 'ราคาต้องไม่ต่ำกว่า 0'),
+    points_to_redeem: z.number().min(0, 'พ้อยต้องไม่ต่ำกว่า 0').nullable(),
     is_active: z.boolean(),
 })
 
@@ -55,6 +56,7 @@ const ProductEdit = () => {
             product_name: '',
             category_id: null,
             base_price: 0,
+            points_to_redeem: null,
             is_active: true,
         },
         resolver: zodResolver(schema),
@@ -77,6 +79,7 @@ const ProductEdit = () => {
                     product_name: detail.product_name,
                     category_id: detail.category_id,
                     base_price: parseFloat(detail.base_price) || 0,
+                    points_to_redeem: detail.points_to_redeem ?? null,
                     is_active: detail.is_active,
                 })
             } catch {
@@ -149,6 +152,7 @@ const ProductEdit = () => {
                 product_name: values.product_name,
                 category_id: values.category_id,
                 base_price: values.base_price,
+                points_to_redeem: values.points_to_redeem,
                 is_active: values.is_active,
                 ...(imagePath !== undefined ? { image_path: imagePath } : {}),
             })
@@ -265,6 +269,31 @@ const ProductEdit = () => {
                                                     parseFloat(e.target.value) || 0,
                                                 )
                                             }
+                                        />
+                                    )}
+                                />
+                            </FormItem>
+
+                            <FormItem
+                                label="พ้อยที่ต้องแลก"
+                                invalid={Boolean(errors.points_to_redeem)}
+                                errorMessage={errors.points_to_redeem?.message}
+                            >
+                                <Controller
+                                    name="points_to_redeem"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Input
+                                            type="number"
+                                            placeholder="ไม่ระบุ = ไม่สามารถแลกได้"
+                                            min="0"
+                                            value={field.value ?? ''}
+                                            onChange={(e) => {
+                                                const val = e.target.value
+                                                field.onChange(
+                                                    val === '' ? null : parseInt(val, 10) || 0,
+                                                )
+                                            }}
                                         />
                                     )}
                                 />
