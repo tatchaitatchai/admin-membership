@@ -79,6 +79,16 @@ const navigationConfig: NavigationTree[] = [
         ],
     },
     {
+        key: 'promotions',
+        path: '/promotions',
+        title: 'จัดการโปรโมชั่น',
+        translateKey: 'nav.promotions',
+        icon: 'promotions',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: ['promotion:view'],
+        subMenu: [],
+    },
+    {
         key: 'stock',
         path: '',
         title: 'จัดการ Stock',

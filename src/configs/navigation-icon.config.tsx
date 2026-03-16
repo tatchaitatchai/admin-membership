@@ -8,6 +8,7 @@ import {
     PiShieldCheckDuotone,
     PiIdentificationCardDuotone,
     PiCalculatorDuotone,
+    PiTagDuotone,
 } from 'react-icons/pi'
 import type { JSX } from 'react'
 
@@ -23,6 +24,7 @@ const navigationIcon: NavigationIcons = {
     staffManagement: <PiIdentificationCardDuotone />,
     permissions: <PiShieldCheckDuotone />,
     costCalculation: <PiCalculatorDuotone />,
+    promotions: <PiTagDuotone />,
 }
 
 export default navigationIcon

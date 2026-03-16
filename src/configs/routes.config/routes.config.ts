@@ -61,6 +61,24 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
+        key: 'promotions',
+        path: '/promotions',
+        component: lazy(() => import('@/views/promotions/PromotionList')),
+        authority: ['promotion:view'],
+    },
+    {
+        key: 'promotions.create',
+        path: '/promotions/create',
+        component: lazy(() => import('@/views/promotions/PromotionCreate')),
+        authority: ['promotion:create'],
+    },
+    {
+        key: 'promotions.edit',
+        path: '/promotions/:id/edit',
+        component: lazy(() => import('@/views/promotions/PromotionEdit')),
+        authority: ['promotion:edit'],
+    },
+    {
         key: 'stock.requisition',
         path: '/stock/requisition',
         component: lazy(() => import('@/views/stock/Requisition')),
