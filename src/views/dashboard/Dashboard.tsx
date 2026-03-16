@@ -17,6 +17,8 @@ import {
     PiVaultDuotone,
     PiShoppingBagDuotone,
     PiStorefrontDuotone,
+    PiCrownDuotone,
+    PiTrophyDuotone,
 } from 'react-icons/pi'
 import { apiGetDashboard } from '@/services/DashboardService'
 import type { DashboardResponse } from '@/services/DashboardService'
@@ -359,7 +361,154 @@ const Dashboard = () => {
                 </div>
             </div>
 
-            {/* ── Row 4: Fraud Detection ── */}
+            {/* ── Row 4: Top Customers ── */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {/* Top Customers — This Month */}
+                <div className="card card-shadow">
+                    <div className="flex items-center gap-2 px-5 py-4">
+                        <PiCrownDuotone className="text-lg text-amber-500" />
+                        <h6 className="font-bold text-gray-900 dark:text-gray-100">
+                            ลูกค้ายอดซื้อสูงสุด (เดือนนี้)
+                        </h6>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-gray-50 dark:bg-gray-700/50">
+                                    <th className="px-5 py-2.5 text-left text-xs font-semibold text-gray-500 w-8">
+                                        #
+                                    </th>
+                                    <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">
+                                        ชื่อลูกค้า
+                                    </th>
+                                    <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">
+                                        เบอร์โทร
+                                    </th>
+                                    <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500">
+                                        ออเดอร์
+                                    </th>
+                                    <th className="px-5 py-2.5 text-right text-xs font-semibold text-gray-500">
+                                        ยอดซื้อรวม
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(data.top_customers_monthly ?? []).map((c, i) => (
+                                    <tr
+                                        key={c.customer_id}
+                                        className="border-t border-gray-100 dark:border-gray-700"
+                                    >
+                                        <td className="px-5 py-2.5">
+                                            <div className="w-6 h-6 rounded-full bg-amber-50 dark:bg-amber-500/20 text-amber-600 flex items-center justify-center text-xs font-bold">
+                                                {i + 1}
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-2.5 font-medium">
+                                            {c.full_name}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-gray-500 text-xs">
+                                            {c.phone}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-right">
+                                            <span className="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-indigo-50 text-indigo-500 text-xs font-bold dark:bg-indigo-500/20">
+                                                {c.order_count}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-2.5 text-right font-bold text-gray-700 dark:text-gray-300">
+                                            ฿{fmt(c.total_spent)}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {(!data.top_customers_monthly ||
+                                    data.top_customers_monthly.length === 0) && (
+                                    <tr>
+                                        <td
+                                            colSpan={5}
+                                            className="px-5 py-6 text-center text-gray-400"
+                                        >
+                                            ยังไม่มีข้อมูลเดือนนี้
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                {/* Top Customers — All Time */}
+                <div className="card card-shadow">
+                    <div className="flex items-center gap-2 px-5 py-4">
+                        <PiTrophyDuotone className="text-lg text-indigo-500" />
+                        <h6 className="font-bold text-gray-900 dark:text-gray-100">
+                            ลูกค้ายอดซื้อสูงสุด (ตลอดกาล)
+                        </h6>
+                    </div>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-sm">
+                            <thead>
+                                <tr className="bg-gray-50 dark:bg-gray-700/50">
+                                    <th className="px-5 py-2.5 text-left text-xs font-semibold text-gray-500 w-8">
+                                        #
+                                    </th>
+                                    <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">
+                                        ชื่อลูกค้า
+                                    </th>
+                                    <th className="px-3 py-2.5 text-left text-xs font-semibold text-gray-500">
+                                        เบอร์โทร
+                                    </th>
+                                    <th className="px-3 py-2.5 text-right text-xs font-semibold text-gray-500">
+                                        ออเดอร์
+                                    </th>
+                                    <th className="px-5 py-2.5 text-right text-xs font-semibold text-gray-500">
+                                        ยอดซื้อรวม
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {(data.top_customers_all_time ?? []).map((c, i) => (
+                                    <tr
+                                        key={c.customer_id}
+                                        className="border-t border-gray-100 dark:border-gray-700"
+                                    >
+                                        <td className="px-5 py-2.5">
+                                            <div className="w-6 h-6 rounded-full bg-indigo-50 dark:bg-indigo-500/20 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                                                {i + 1}
+                                            </div>
+                                        </td>
+                                        <td className="px-3 py-2.5 font-medium">
+                                            {c.full_name}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-gray-500 text-xs">
+                                            {c.phone}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-right">
+                                            <span className="inline-flex items-center justify-center min-w-[28px] h-6 rounded-full bg-indigo-50 text-indigo-500 text-xs font-bold dark:bg-indigo-500/20">
+                                                {c.order_count}
+                                            </span>
+                                        </td>
+                                        <td className="px-5 py-2.5 text-right font-bold text-gray-700 dark:text-gray-300">
+                                            ฿{fmt(c.total_spent)}
+                                        </td>
+                                    </tr>
+                                ))}
+                                {(!data.top_customers_all_time ||
+                                    data.top_customers_all_time.length === 0) && (
+                                    <tr>
+                                        <td
+                                            colSpan={5}
+                                            className="px-5 py-6 text-center text-gray-400"
+                                        >
+                                            ยังไม่มีข้อมูล
+                                        </td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Row 5: Fraud Detection ── */}
             <div className="mt-2">
                 <div className="flex items-center gap-2 mb-3">
                     <PiWarningDuotone className="text-xl text-red-500" />
