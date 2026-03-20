@@ -4,34 +4,25 @@ import Container from '@/components/shared/Container'
 import AdaptiveCard from '@/components/shared/AdaptiveCard'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
-import { FormItem, Form } from '@/components/ui/Form'
-import Select from '@/components/ui/Select'
+import Checkbox from '@/components/ui/Checkbox'
 import Switcher from '@/components/ui/Switcher'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
-import { TbArrowLeft } from 'react-icons/tb'
-import { useForm, Controller } from 'react-hook-form'
-import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import Tag from '@/components/ui/Tag'
 import {
-    apiCreateBranchProduct,
+    TbArrowLeft,
+    TbSearch,
+    TbBuildingStore,
+    TbPackage,
+} from 'react-icons/tb'
+import {
+    apiBatchAssignBranchProducts,
     apiListProducts,
-    apiListBranchProducts,
 } from '@/services/ProductService'
 import { apiListBranches } from '@/services/StaffManagementService'
 import type { BranchOption } from '@/views/staff-management/types'
 import type { ProductFields } from './types'
 import { getErrorMessage } from '@/utils/errorHandler'
-
-const schema = z.object({
-    branch_id: z.number({ required_error: 'กรุณาเลือกสาขา' }).min(1, 'กรุณาเลือกสาขา'),
-    product_id: z.number({ required_error: 'กรุณาเลือกสินค้า' }).min(1, 'กรุณาเลือกสินค้า'),
-    on_stock: z.number().min(0, 'จำนวนต้องไม่ต่ำกว่า 0'),
-    reorder_level: z.number().min(0, 'จุดสั่งซื้อต้องไม่ต่ำกว่า 0'),
-    is_active: z.boolean(),
-})
-
-type FormSchema = z.infer<typeof schema>
 
 const BranchProductCreate = () => {
     const navigate = useNavigate()
@@ -39,27 +30,12 @@ const BranchProductCreate = () => {
     const [products, setProducts] = useState<ProductFields[]>([])
     const [submitting, setSubmitting] = useState(false)
 
-    const [existingProductIds, setExistingProductIds] = useState<Set<number>>(new Set())
-    const [loadingProducts, setLoadingProducts] = useState(false)
-
-    const {
-        handleSubmit,
-        control,
-        setValue,
-        watch,
-        formState: { errors },
-    } = useForm<FormSchema>({
-        defaultValues: {
-            branch_id: 0,
-            product_id: 0,
-            on_stock: 0,
-            reorder_level: 0,
-            is_active: true,
-        },
-        resolver: zodResolver(schema),
-    })
-
-    const watchedBranchId = watch('branch_id')
+    const [selectedBranchIds, setSelectedBranchIds] = useState<number[]>([])
+    const [selectedProductIds, setSelectedProductIds] = useState<number[]>([])
+    const [productSearch, setProductSearch] = useState('')
+    const [onStock, setOnStock] = useState(0)
+    const [reorderLevel, setReorderLevel] = useState(0)
+    const [isActive, setIsActive] = useState(true)
 
     useEffect(() => {
         apiListBranches()
@@ -70,40 +46,91 @@ const BranchProductCreate = () => {
             .catch(() => {})
     }, [])
 
-    useEffect(() => {
-        if (watchedBranchId && watchedBranchId > 0) {
-            setLoadingProducts(true)
-            apiListBranchProducts({ branch_id: watchedBranchId, limit: 500 })
-                .then((resp) => {
-                    const ids = new Set((resp.data ?? []).map((item) => item.product_id))
-                    setExistingProductIds(ids)
-                })
-                .catch(() => setExistingProductIds(new Set()))
-                .finally(() => setLoadingProducts(false))
-            setValue('product_id', 0)
-        } else {
-            setExistingProductIds(new Set())
-        }
-    }, [watchedBranchId, setValue])
+    const filteredProducts = useMemo(() => {
+        if (!productSearch.trim()) return products
+        const q = productSearch.toLowerCase()
+        return products.filter(
+            (p) =>
+                p.product_name.toLowerCase().includes(q) ||
+                (p.category_name && p.category_name.toLowerCase().includes(q)),
+        )
+    }, [products, productSearch])
 
-    const onSubmit = async (values: FormSchema) => {
+    const toggleBranch = (id: number) => {
+        setSelectedBranchIds((prev) =>
+            prev.includes(id) ? prev.filter((b) => b !== id) : [...prev, id],
+        )
+    }
+
+    const toggleAllBranches = () => {
+        if (selectedBranchIds.length === branches.length) {
+            setSelectedBranchIds([])
+        } else {
+            setSelectedBranchIds(branches.map((b) => b.id))
+        }
+    }
+
+    const toggleProduct = (id: number) => {
+        setSelectedProductIds((prev) =>
+            prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
+        )
+    }
+
+    const toggleAllProducts = () => {
+        const filteredIds = filteredProducts.map((p) => p.id)
+        const allSelected = filteredIds.every((id) =>
+            selectedProductIds.includes(id),
+        )
+        if (allSelected) {
+            setSelectedProductIds((prev) =>
+                prev.filter((id) => !filteredIds.includes(id)),
+            )
+        } else {
+            setSelectedProductIds((prev) => [
+                ...new Set([...prev, ...filteredIds]),
+            ])
+        }
+    }
+
+    const handleSubmit = async () => {
+        if (selectedBranchIds.length === 0) {
+            toast.push(
+                <Notification type="warning" title="แจ้งเตือน">
+                    กรุณาเลือกอย่างน้อย 1 สาขา
+                </Notification>,
+            )
+            return
+        }
+        if (selectedProductIds.length === 0) {
+            toast.push(
+                <Notification type="warning" title="แจ้งเตือน">
+                    กรุณาเลือกอย่างน้อย 1 สินค้า
+                </Notification>,
+            )
+            return
+        }
+
         setSubmitting(true)
         try {
-            await apiCreateBranchProduct({
-                branch_id: values.branch_id,
-                product_id: values.product_id,
-                on_stock: values.on_stock,
-                reorder_level: values.reorder_level,
-                is_active: values.is_active,
+            const resp = await apiBatchAssignBranchProducts({
+                branch_ids: selectedBranchIds,
+                product_ids: selectedProductIds,
+                on_stock: onStock,
+                reorder_level: reorderLevel,
+                is_active: isActive,
             })
             toast.push(
                 <Notification type="success" title="สำเร็จ">
-                    เพิ่มสินค้าสาขาแล้ว
+                    เพิ่มสินค้าสาขาแล้ว {resp.created} รายการ
+                    {resp.skipped > 0 && ` (ข้าม ${resp.skipped} รายการที่มีอยู่แล้ว)`}
                 </Notification>,
             )
             navigate('/products/branch-products')
         } catch (err: any) {
-            const errorMessage = await getErrorMessage(err, 'ไม่สามารถเพิ่มสินค้าสาขาได้')
+            const errorMessage = await getErrorMessage(
+                err,
+                'ไม่สามารถเพิ่มสินค้าสาขาได้',
+            )
             toast.push(
                 <Notification type="danger" title="Error">
                     {errorMessage}
@@ -114,21 +141,7 @@ const BranchProductCreate = () => {
         }
     }
 
-    const branchOptions = branches.map((b) => ({
-        value: b.id,
-        label: b.branch_name,
-    }))
-
-    const productOptions = useMemo(
-        () =>
-            products
-                .filter((p) => !existingProductIds.has(p.id))
-                .map((p) => ({
-                    value: p.id,
-                    label: `${p.product_name}${p.category_name ? ` (${p.category_name})` : ''}`,
-                })),
-        [products, existingProductIds],
-    )
+    const totalPairs = selectedBranchIds.length * selectedProductIds.length
 
     return (
         <Container>
@@ -141,142 +154,233 @@ const BranchProductCreate = () => {
                             icon={<TbArrowLeft />}
                             onClick={() => navigate('/products/branch-products')}
                         />
-                        <h3>เพิ่มสินค้าสาขา</h3>
+                        <h3>เพิ่มสินค้าสาขา (Batch)</h3>
                     </div>
 
-                    <Form onSubmit={handleSubmit(onSubmit)}>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4">
-                            <FormItem
-                                label="สาขา"
-                                invalid={Boolean(errors.branch_id)}
-                                errorMessage={errors.branch_id?.message}
-                            >
-                                <Controller
-                                    name="branch_id"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Select
-                                            placeholder="เลือกสาขา"
-                                            options={branchOptions}
-                                            value={branchOptions.find(
-                                                (o) => o.value === field.value,
-                                            ) ?? null}
-                                            onChange={(opt) =>
-                                                field.onChange(opt?.value ?? 0)
-                                            }
-                                        />
-                                    )}
-                                />
-                            </FormItem>
+                    <p className="text-sm text-gray-500">
+                        เลือกสาขาและสินค้าที่ต้องการ แล้วกดบันทึกทีเดียว
+                        สินค้าที่ซ้ำจะถูกข้ามอัตโนมัติ
+                    </p>
 
-                            <FormItem
-                                label="สินค้าหลัก"
-                                invalid={Boolean(errors.product_id)}
-                                errorMessage={errors.product_id?.message}
-                            >
-                                <Controller
-                                    name="product_id"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Select
-                                            placeholder={
-                                                watchedBranchId > 0
-                                                    ? loadingProducts
-                                                        ? 'กำลังโหลด...'
-                                                        : 'เลือกสินค้า'
-                                                    : 'กรุณาเลือกสาขาก่อน'
-                                            }
-                                            isDisabled={!watchedBranchId || watchedBranchId === 0}
-                                            isLoading={loadingProducts}
-                                            noOptionsMessage={() => 'สินค้าทั้งหมดถูกเพิ่มในสาขานี้แล้ว'}
-                                            options={productOptions}
-                                            value={productOptions.find(
-                                                (o) => o.value === field.value,
-                                            ) ?? null}
-                                            onChange={(opt) =>
-                                                field.onChange(opt?.value ?? 0)
-                                            }
-                                        />
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Branch Selection */}
+                        <div>
+                            <div className="flex items-center justify-between mb-3">
+                                <h5 className="flex items-center gap-2">
+                                    <TbBuildingStore className="text-lg" />
+                                    เลือกสาขา
+                                    {selectedBranchIds.length > 0 && (
+                                        <Tag className="bg-blue-100 text-blue-600 border-0">
+                                            {selectedBranchIds.length}
+                                        </Tag>
                                     )}
-                                />
-                            </FormItem>
-
-                            <FormItem
-                                label="จำนวนคงเหลือ"
-                                invalid={Boolean(errors.on_stock)}
-                                errorMessage={errors.on_stock?.message}
-                            >
-                                <Controller
-                                    name="on_stock"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Input
-                                            type="number"
-                                            placeholder="0"
-                                            min="0"
-                                            value={field.value || ''}
-                                            onChange={(e) =>
-                                                field.onChange(parseInt(e.target.value) || 0)
-                                            }
-                                        />
-                                    )}
-                                />
-                            </FormItem>
-
-                            <FormItem
-                                label="จุดสั่งซื้อ (Reorder Level)"
-                                invalid={Boolean(errors.reorder_level)}
-                                errorMessage={errors.reorder_level?.message}
-                            >
-                                <Controller
-                                    name="reorder_level"
-                                    control={control}
-                                    render={({ field }) => (
-                                        <Input
-                                            type="number"
-                                            placeholder="0"
-                                            min="0"
-                                            value={field.value || ''}
-                                            onChange={(e) =>
-                                                field.onChange(parseInt(e.target.value) || 0)
-                                            }
-                                        />
-                                    )}
-                                />
-                            </FormItem>
-                        </div>
-
-                        <div className="flex items-center gap-2 mt-2 mb-6">
-                            <Controller
-                                name="is_active"
-                                control={control}
-                                render={({ field }) => (
-                                    <div className="flex items-center gap-2">
-                                        <Switcher
-                                            checked={field.value}
-                                            onChange={field.onChange}
-                                        />
-                                        <span>เปิดขาย</span>
+                                </h5>
+                                <Button
+                                    size="xs"
+                                    variant="plain"
+                                    onClick={toggleAllBranches}
+                                >
+                                    {selectedBranchIds.length === branches.length
+                                        ? 'ยกเลิกทั้งหมด'
+                                        : 'เลือกทั้งหมด'}
+                                </Button>
+                            </div>
+                            <div className="border rounded-lg dark:border-gray-600 max-h-[300px] overflow-y-auto">
+                                {branches.length === 0 ? (
+                                    <div className="p-4 text-center text-gray-400 text-sm">
+                                        ไม่มีสาขา
                                     </div>
+                                ) : (
+                                    branches.map((branch) => (
+                                        <label
+                                            key={branch.id}
+                                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border-b last:border-b-0 dark:border-gray-600"
+                                        >
+                                            <Checkbox
+                                                checked={selectedBranchIds.includes(
+                                                    branch.id,
+                                                )}
+                                                onChange={() =>
+                                                    toggleBranch(branch.id)
+                                                }
+                                            />
+                                            <span className="font-medium">
+                                                {branch.branch_name}
+                                            </span>
+                                        </label>
+                                    ))
                                 )}
-                            />
+                            </div>
                         </div>
 
+                        {/* Product Selection */}
+                        <div>
+                            <div className="flex items-center justify-between mb-3">
+                                <h5 className="flex items-center gap-2">
+                                    <TbPackage className="text-lg" />
+                                    เลือกสินค้า
+                                    {selectedProductIds.length > 0 && (
+                                        <Tag className="bg-emerald-100 text-emerald-600 border-0">
+                                            {selectedProductIds.length}
+                                        </Tag>
+                                    )}
+                                </h5>
+                                <Button
+                                    size="xs"
+                                    variant="plain"
+                                    onClick={toggleAllProducts}
+                                >
+                                    {filteredProducts.length > 0 &&
+                                    filteredProducts.every((p) =>
+                                        selectedProductIds.includes(p.id),
+                                    )
+                                        ? 'ยกเลิกทั้งหมด'
+                                        : 'เลือกทั้งหมด'}
+                                </Button>
+                            </div>
+                            <Input
+                                size="sm"
+                                placeholder="ค้นหาสินค้า..."
+                                prefix={
+                                    <TbSearch className="text-lg" />
+                                }
+                                className="mb-2"
+                                value={productSearch}
+                                onChange={(e) =>
+                                    setProductSearch(e.target.value)
+                                }
+                            />
+                            <div className="border rounded-lg dark:border-gray-600 max-h-[300px] overflow-y-auto">
+                                {filteredProducts.length === 0 ? (
+                                    <div className="p-4 text-center text-gray-400 text-sm">
+                                        ไม่พบสินค้า
+                                    </div>
+                                ) : (
+                                    filteredProducts.map((product) => (
+                                        <label
+                                            key={product.id}
+                                            className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer border-b last:border-b-0 dark:border-gray-600"
+                                        >
+                                            <Checkbox
+                                                checked={selectedProductIds.includes(
+                                                    product.id,
+                                                )}
+                                                onChange={() =>
+                                                    toggleProduct(product.id)
+                                                }
+                                            />
+                                            <div className="flex items-center gap-3 min-w-0">
+                                                {product.image_path ? (
+                                                    <img
+                                                        src={product.image_path}
+                                                        alt={product.product_name}
+                                                        className="w-8 h-8 rounded object-cover border flex-shrink-0"
+                                                    />
+                                                ) : (
+                                                    <div className="w-8 h-8 rounded bg-gray-100 dark:bg-gray-700 flex-shrink-0" />
+                                                )}
+                                                <div className="min-w-0">
+                                                    <span className="font-medium block truncate">
+                                                        {product.product_name}
+                                                    </span>
+                                                    {product.category_name && (
+                                                        <span className="text-xs text-gray-400 block truncate">
+                                                            {product.category_name}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </label>
+                                    ))
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Settings */}
+                    <div className="border rounded-lg p-4 dark:border-gray-600">
+                        <h5 className="mb-3">ค่าเริ่มต้น</h5>
+                        <p className="text-xs text-gray-400 mb-3">
+                            กำหนดค่าเริ่มต้นสำหรับสินค้าสาขาที่สร้างใหม่
+                            สามารถแก้ไขแยกแต่ละรายการได้ภายหลัง
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium mb-1">
+                                    จำนวนคงเหลือ
+                                </label>
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    min="0"
+                                    value={onStock || ''}
+                                    onChange={(e) =>
+                                        setOnStock(parseInt(e.target.value) || 0)
+                                    }
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium mb-1">
+                                    จุดสั่งซื้อ (Reorder Level)
+                                </label>
+                                <Input
+                                    type="number"
+                                    placeholder="0"
+                                    min="0"
+                                    value={reorderLevel || ''}
+                                    onChange={(e) =>
+                                        setReorderLevel(
+                                            parseInt(e.target.value) || 0,
+                                        )
+                                    }
+                                />
+                            </div>
+                            <div className="flex items-end pb-2">
+                                <div className="flex items-center gap-2">
+                                    <Switcher
+                                        checked={isActive}
+                                        onChange={(val) => setIsActive(val)}
+                                    />
+                                    <span>เปิดขาย</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Summary & Actions */}
+                    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 pt-2">
+                        <div className="text-sm text-gray-500">
+                            {totalPairs > 0 ? (
+                                <span>
+                                    จะสร้าง{' '}
+                                    <strong className="text-gray-900 dark:text-gray-100">
+                                        {totalPairs}
+                                    </strong>{' '}
+                                    รายการ ({selectedProductIds.length} สินค้า
+                                    x {selectedBranchIds.length} สาขา)
+                                </span>
+                            ) : (
+                                <span>เลือกสาขาและสินค้าเพื่อดำเนินการ</span>
+                            )}
+                        </div>
                         <div className="flex gap-2">
                             <Button
-                                variant="solid"
-                                type="submit"
-                                loading={submitting}
-                            >
-                                บันทึก
-                            </Button>
-                            <Button
-                                onClick={() => navigate('/products/branch-products')}
+                                onClick={() =>
+                                    navigate('/products/branch-products')
+                                }
                             >
                                 ยกเลิก
                             </Button>
+                            <Button
+                                variant="solid"
+                                loading={submitting}
+                                disabled={totalPairs === 0}
+                                onClick={handleSubmit}
+                            >
+                                บันทึก ({totalPairs} รายการ)
+                            </Button>
                         </div>
-                    </Form>
+                    </div>
                 </div>
             </AdaptiveCard>
         </Container>

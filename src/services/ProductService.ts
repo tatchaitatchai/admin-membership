@@ -176,6 +176,20 @@ export async function apiUpdateBranchProduct(id: number, data: {
     })
 }
 
+export async function apiBatchAssignBranchProducts(data: {
+    branch_ids: number[]
+    product_ids: number[]
+    on_stock: number
+    reorder_level?: number
+    is_active?: boolean
+}) {
+    return ApiService.fetchData<{ created: number; skipped: number }>({
+        url: `${BRANCH_PRODUCT_API_PREFIX}/batch-assign`,
+        method: 'post',
+        data,
+    })
+}
+
 export async function apiDeleteBranchProduct(id: number) {
     return ApiService.fetchData<{ message: string }>({
         url: `${BRANCH_PRODUCT_API_PREFIX}/${id}`,
