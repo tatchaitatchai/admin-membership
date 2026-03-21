@@ -97,6 +97,12 @@ export const protectedRoutes: Routes = [
         authority: [],
     },
     {
+        key: 'points.groups',
+        path: '/points/groups',
+        component: lazy(() => import('@/views/points/PointGroupList')),
+        authority: [],
+    },
+    {
         key: 'broadcast',
         path: '/broadcast',
         component: lazy(() => import('@/views/broadcast/Broadcast')),

@@ -26,6 +26,7 @@ const schema = z.object({
     product_name: z.string().min(1, 'กรุณากรอกชื่อสินค้า'),
     category_id: z.number().nullable(),
     base_price: z.number().min(0, 'ราคาต้องไม่ต่ำกว่า 0'),
+    cost_price: z.number().min(0, 'ต้นทุนต้องไม่ต่ำกว่า 0'),
     points_to_redeem: z.number().min(0, 'พ้อยต้องไม่ต่ำกว่า 0').nullable(),
     is_active: z.boolean(),
 })
@@ -56,6 +57,7 @@ const ProductEdit = () => {
             product_name: '',
             category_id: null,
             base_price: 0,
+            cost_price: 0,
             points_to_redeem: null,
             is_active: true,
         },
@@ -79,6 +81,7 @@ const ProductEdit = () => {
                     product_name: detail.product_name,
                     category_id: detail.category_id,
                     base_price: parseFloat(detail.base_price) || 0,
+                    cost_price: parseFloat(detail.cost_price) || 0,
                     points_to_redeem: detail.points_to_redeem ?? null,
                     is_active: detail.is_active,
                 })
@@ -152,6 +155,7 @@ const ProductEdit = () => {
                 product_name: values.product_name,
                 category_id: values.category_id,
                 base_price: values.base_price,
+                cost_price: values.cost_price,
                 points_to_redeem: values.points_to_redeem,
                 is_active: values.is_active,
                 ...(imagePath !== undefined ? { image_path: imagePath } : {}),
@@ -256,6 +260,31 @@ const ProductEdit = () => {
                             >
                                 <Controller
                                     name="base_price"
+                                    control={control}
+                                    render={({ field }) => (
+                                        <Input
+                                            type="number"
+                                            placeholder="0.00"
+                                            step="0.01"
+                                            min="0"
+                                            value={field.value || ''}
+                                            onChange={(e) =>
+                                                field.onChange(
+                                                    parseFloat(e.target.value) || 0,
+                                                )
+                                            }
+                                        />
+                                    )}
+                                />
+                            </FormItem>
+
+                            <FormItem
+                                label="ต้นทุน (บาท)"
+                                invalid={Boolean(errors.cost_price)}
+                                errorMessage={errors.cost_price?.message}
+                            >
+                                <Controller
+                                    name="cost_price"
                                     control={control}
                                     render={({ field }) => (
                                         <Input

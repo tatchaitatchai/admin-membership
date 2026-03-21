@@ -141,6 +141,27 @@ const navigationConfig: NavigationTree[] = [
         ],
     },
     {
+        key: 'points',
+        path: '',
+        title: 'ตั้งค่าสะสมแต้ม',
+        translateKey: 'nav.points',
+        icon: 'points',
+        type: NAV_ITEM_TYPE_COLLAPSE,
+        authority: ['point_group:view'],
+        subMenu: [
+            {
+                key: 'points.groups',
+                path: '/points/groups',
+                title: 'กลุ่มสะสมแต้ม',
+                translateKey: 'nav.points.groups',
+                icon: '',
+                type: NAV_ITEM_TYPE_ITEM,
+                authority: ['point_group:view'],
+                subMenu: [],
+            },
+        ],
+    },
+    {
         key: 'broadcast',
         path: '/broadcast',
         title: 'ส่ง Broadcast',

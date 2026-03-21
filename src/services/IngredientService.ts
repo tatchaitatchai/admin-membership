@@ -5,6 +5,8 @@ const API_PREFIX = 'api/v2/ingredients'
 
 export type IngredientListItem = {
     id: number
+    product_id: number | null
+    product_name: string | null
     ingredient_name: string
     cost_unit: string
     cost_per_unit: number
@@ -35,6 +37,7 @@ export async function apiGetIngredient(id: number) {
 }
 
 export async function apiCreateIngredient(data: {
+    product_id?: number | null
     ingredient_name: string
     cost_unit: string
     cost_per_unit: number
@@ -49,6 +52,7 @@ export async function apiCreateIngredient(data: {
 }
 
 export async function apiUpdateIngredient(id: number, data: {
+    product_id?: number | null
     ingredient_name?: string
     cost_unit?: string
     cost_per_unit?: number

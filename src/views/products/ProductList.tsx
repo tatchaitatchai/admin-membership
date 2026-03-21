@@ -160,6 +160,15 @@ const ProductList = () => {
                 ),
             },
             {
+                header: 'ต้นทุน',
+                accessorKey: 'cost_price',
+                cell: (props) => (
+                    <span className="text-gray-600 dark:text-gray-300">
+                        ฿{Number(props.row.original.cost_price).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    </span>
+                ),
+            },
+            {
                 header: 'สถานะ',
                 accessorKey: 'is_active',
                 enableSorting: false,

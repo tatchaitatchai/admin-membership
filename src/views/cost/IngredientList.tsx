@@ -4,6 +4,8 @@ import AdaptiveCard from '@/components/shared/AdaptiveCard'
 import Button from '@/components/ui/Button'
 import Dialog from '@/components/ui/Dialog'
 import Input from '@/components/ui/Input'
+import Select from '@/components/ui/Select'
+import Tag from '@/components/ui/Tag'
 import Notification from '@/components/ui/Notification'
 import toast from '@/components/ui/toast'
 import DataTable from '@/components/shared/DataTable'
@@ -16,6 +18,8 @@ import {
     apiDeleteIngredient,
 } from '@/services/IngredientService'
 import type { IngredientListItem } from '@/services/IngredientService'
+import { apiListProducts } from '@/services/ProductService'
+import type { ProductFields } from '@/views/products/types'
 import { getErrorMessage } from '@/utils/errorHandler'
 
 const IngredientList = () => {
@@ -25,11 +29,13 @@ const IngredientList = () => {
     const [pageIndex, setPageIndex] = useState(1)
     const [pageSize, setPageSize] = useState(10)
     const [search, setSearch] = useState('')
+    const [products, setProducts] = useState<ProductFields[]>([])
 
     // ── Create / Edit dialog ─────────────────────────────────────
     const [formOpen, setFormOpen] = useState(false)
     const [formSubmitting, setFormSubmitting] = useState(false)
     const [editTarget, setEditTarget] = useState<IngredientListItem | null>(null)
+    const [formProductId, setFormProductId] = useState<number | null>(null)
     const [formName, setFormName] = useState('')
     const [formCostUnit, setFormCostUnit] = useState('')
     const [formCostPerUnit, setFormCostPerUnit] = useState('')
@@ -66,9 +72,25 @@ const IngredientList = () => {
         fetchList()
     }, [fetchList])
 
+    useEffect(() => {
+        apiListProducts({ limit: 500 })
+            .then((resp) => setProducts(resp.data ?? []))
+            .catch(() => {})
+    }, [])
+
+    const productOptions = useMemo(
+        () =>
+            products.map((p) => ({
+                value: p.id,
+                label: `${p.product_name}${p.category_name ? ` (${p.category_name})` : ''}`,
+            })),
+        [products],
+    )
+
     // ── Open form ────────────────────────────────────────────────
     const openCreate = () => {
         setEditTarget(null)
+        setFormProductId(null)
         setFormName('')
         setFormCostUnit('')
         setFormCostPerUnit('')
@@ -79,6 +101,7 @@ const IngredientList = () => {
 
     const openEdit = (item: IngredientListItem) => {
         setEditTarget(item)
+        setFormProductId(item.product_id)
         setFormName(item.ingredient_name)
         setFormCostUnit(item.cost_unit)
         setFormCostPerUnit(String(item.cost_per_unit))
@@ -111,6 +134,7 @@ const IngredientList = () => {
         try {
             if (editTarget) {
                 await apiUpdateIngredient(editTarget.id, {
+                    product_id: formProductId,
                     ingredient_name: formName,
                     cost_unit: formCostUnit,
                     cost_per_unit: costPerUnitNum,
@@ -124,6 +148,7 @@ const IngredientList = () => {
                 )
             } else {
                 await apiCreateIngredient({
+                    product_id: formProductId,
                     ingredient_name: formName,
                     cost_unit: formCostUnit,
                     cost_per_unit: costPerUnitNum,
@@ -180,6 +205,22 @@ const IngredientList = () => {
                 cell: (props) => (
                     <span className="font-semibold">
                         {props.row.original.ingredient_name}
+                    </span>
+                ),
+            },
+            {
+                header: 'สินค้าที่เชื่อม',
+                id: 'product_name',
+                enableSorting: false,
+                cell: (props) => (
+                    <span>
+                        {props.row.original.product_name ? (
+                            <Tag className="bg-blue-100 text-blue-600 border-0">
+                                {props.row.original.product_name}
+                            </Tag>
+                        ) : (
+                            <span className="text-gray-400">ไม่ระบุ</span>
+                        )}
                     </span>
                 ),
             },
@@ -316,6 +357,31 @@ const IngredientList = () => {
                     {editTarget ? 'แก้ไขวัตถุดิบ' : 'เพิ่มวัตถุดิบ'}
                 </h5>
                 <div className="flex flex-col gap-3">
+                    <div>
+                        <label className="block text-sm font-medium mb-1">
+                            เลือกสินค้า (ไม่บังคับ)
+                        </label>
+                        <Select
+                            size="sm"
+                            placeholder="เลือกสินค้าที่เชื่อมโยง..."
+                            options={productOptions}
+                            value={productOptions.find((o) => o.value === formProductId) ?? null}
+                            onChange={(opt) => {
+                                setFormProductId(opt?.value ?? null)
+                                if (opt?.value) {
+                                    const selected = products.find((p) => p.id === opt.value)
+                                    if (selected) {
+                                        setFormName(selected.product_name)
+                                        const cost = parseFloat(selected.cost_price) || 0
+                                        if (cost > 0) {
+                                            setFormCostPerUnit(String(cost))
+                                        }
+                                    }
+                                }
+                            }}
+                            isClearable
+                        />
+                    </div>
                     <div>
                         <label className="block text-sm font-medium mb-1">
                             ชื่อวัตถุดิบ <span className="text-red-500">*</span>
