@@ -1,11 +1,12 @@
+import { useMemo } from 'react'
 import ProtectedRoute from './ProtectedRoute'
 import PublicRoute from './PublicRoute'
 import AuthorityGuard from './AuthorityGuard'
 import AppRoute from './AppRoute'
 import PageContainer from '@/components/template/PageContainer'
 import { protectedRoutes, publicRoutes } from '@/configs/routes.config'
-import appConfig from '@/configs/app.config'
 import { useAuth } from '@/auth'
+import { getFirstPermittedPath } from '@/utils/getFirstPermittedPath'
 import { Routes, Route, Navigate } from 'react-router-dom'
 import type { LayoutType } from '@/@types/theme'
 
@@ -16,17 +17,20 @@ interface ViewsProps {
 
 type AllRoutesProps = ViewsProps
 
-const { authenticatedEntryPath } = appConfig
-
 const AllRoutes = (props: AllRoutesProps) => {
     const { user } = useAuth()
+
+    const entryPath = useMemo(
+        () => getFirstPermittedPath(user.authority ?? []),
+        [user.authority],
+    )
 
     return (
         <Routes>
             <Route path="/" element={<ProtectedRoute />}>
                 <Route
                     path="/"
-                    element={<Navigate replace to={authenticatedEntryPath} />}
+                    element={<Navigate replace to={entryPath} />}
                 />
                 {protectedRoutes.map((route, index) => (
                     <Route

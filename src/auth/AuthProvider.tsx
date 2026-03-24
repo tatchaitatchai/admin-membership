@@ -5,6 +5,7 @@ import { useAuthStore } from '@/store/authStore'
 import { apiSignIn } from '@/services/AuthService'
 import { REDIRECT_URL_KEY } from '@/constants/app.constant'
 import { useNavigate } from 'react-router-dom'
+import { getFirstPermittedPath } from '@/utils/getFirstPermittedPath'
 import type {
     SignInCredential,
     SignUpCredential,
@@ -51,13 +52,15 @@ function AuthProvider({ children }: AuthProviderProps) {
 
     const authenticated = status === 'authenticated'
 
-    const redirect = () => {
+    const redirect = (permissions: string[] = []) => {
         const search = window.location.search
         const params = new URLSearchParams(search)
         const redirectUrl = params.get(REDIRECT_URL_KEY)
 
+        const fallback = getFirstPermittedPath(permissions)
+
         navigatorRef.current?.navigate(
-            redirectUrl ? redirectUrl : appConfig.authenticatedEntryPath,
+            redirectUrl ? redirectUrl : fallback,
         )
     }
 
@@ -73,7 +76,7 @@ function AuthProvider({ children }: AuthProviderProps) {
                     storeName: resp.store_name,
                     branchId: resp.branch_id ?? undefined,
                 }, perms)
-                redirect()
+                redirect(perms)
                 return {
                     status: 'success',
                     message: '',
