@@ -89,6 +89,16 @@ const navigationConfig: NavigationTree[] = [
         subMenu: [],
     },
     {
+        key: 'orderManagement',
+        path: '/order-management',
+        title: 'รายการคำสั่งซื้อ',
+        translateKey: 'nav.orderManagement',
+        icon: 'orders',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: ['order:view'],
+        subMenu: [],
+    },
+    {
         key: 'stock',
         path: '',
         title: 'จัดการ Stock',

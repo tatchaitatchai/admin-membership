@@ -121,6 +121,12 @@ export const protectedRoutes: Routes = [
         authority: ['permission:view'],
     },
     {
+        key: 'orderManagement',
+        path: '/order-management',
+        component: lazy(() => import('@/views/orders/OrderList')),
+        authority: ['order:view'],
+    },
+    {
         key: 'staffManagement',
         path: '/staff-management',
         component: lazy(() => import('@/views/staff-management/StaffList')),
