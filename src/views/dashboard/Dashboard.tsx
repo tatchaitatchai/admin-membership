@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import ReactApexChart from 'react-apexcharts'
 import type { ApexOptions } from 'apexcharts'
 import Notification from '@/components/ui/Notification'
@@ -19,9 +19,13 @@ import {
     PiStorefrontDuotone,
     PiCrownDuotone,
     PiTrophyDuotone,
+    PiArrowsClockwiseDuotone,
+    PiCalendarBlankDuotone,
 } from 'react-icons/pi'
 import { apiGetDashboard } from '@/services/DashboardService'
 import type { DashboardResponse } from '@/services/DashboardService'
+
+const AUTO_REFRESH_MS = 10_000
 
 const fmt = (n: number) =>
     n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -37,29 +41,134 @@ const pctChange = (curr: number, prev: number) => {
     return ((curr - prev) / prev) * 100
 }
 
+const toDateStr = (d: Date) => {
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const day = String(d.getDate()).padStart(2, '0')
+    return `${y}-${m}-${day}`
+}
+
+type PresetKey = 'today' | '7d' | '30d' | 'this_month' | 'last_month' | 'custom'
+
+const presetButtons: { key: PresetKey; label: string }[] = [
+    { key: 'today', label: 'วันนี้' },
+    { key: '7d', label: '7 วัน' },
+    { key: '30d', label: '30 วัน' },
+    { key: 'this_month', label: 'เดือนนี้' },
+    { key: 'last_month', label: 'เดือนก่อน' },
+    { key: 'custom', label: 'กำหนดเอง' },
+]
+
+const getPresetRange = (key: PresetKey): [string, string] => {
+    const now = new Date()
+    const today = toDateStr(now)
+    switch (key) {
+        case 'today':
+            return [today, today]
+        case '7d': {
+            const d = new Date(now)
+            d.setDate(d.getDate() - 6)
+            return [toDateStr(d), today]
+        }
+        case '30d': {
+            const d = new Date(now)
+            d.setDate(d.getDate() - 29)
+            return [toDateStr(d), today]
+        }
+        case 'this_month':
+            return [toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)), today]
+        case 'last_month': {
+            const s = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+            const e = new Date(now.getFullYear(), now.getMonth(), 0)
+            return [toDateStr(s), toDateStr(e)]
+        }
+        default:
+            return [toDateStr(new Date(now.getFullYear(), now.getMonth(), 1)), today]
+    }
+}
+
 const Dashboard = () => {
     const [data, setData] = useState<DashboardResponse | null>(null)
     const [loading, setLoading] = useState(true)
+    const [preset, setPreset] = useState<PresetKey>('this_month')
+    const [dateRange, setDateRange] = useState<[string, string]>(getPresetRange('this_month'))
+    const [customStart, setCustomStart] = useState('')
+    const [customEnd, setCustomEnd] = useState('')
+    const [autoRefresh, setAutoRefresh] = useState(true)
+    const [lastRefreshed, setLastRefreshed] = useState<Date>(new Date())
+    const isMountedRef = useRef(true)
 
-    const fetchDashboard = useCallback(async () => {
-        setLoading(true)
+    const fetchDashboard = useCallback(async (startDate: string, endDate: string, silent = false) => {
+        if (!silent) setLoading(true)
         try {
-            const resp = await apiGetDashboard()
-            setData(resp)
+            const resp = await apiGetDashboard(startDate, endDate)
+            if (isMountedRef.current) {
+                setData(resp)
+                setLastRefreshed(new Date())
+            }
         } catch {
-            toast.push(
-                <Notification type="danger" title="Error">
-                    ไม่สามารถโหลดข้อมูล Dashboard ได้
-                </Notification>,
-            )
+            if (!silent) {
+                toast.push(
+                    <Notification type="danger" title="Error">
+                        ไม่สามารถโหลดข้อมูล Dashboard ได้
+                    </Notification>,
+                )
+            }
         } finally {
-            setLoading(false)
+            if (!silent) setLoading(false)
         }
     }, [])
 
+    // Initial fetch + fetch on date change
     useEffect(() => {
-        fetchDashboard()
-    }, [fetchDashboard])
+        fetchDashboard(dateRange[0], dateRange[1])
+    }, [dateRange, fetchDashboard])
+
+    // Auto-refresh every 10s (pause when tab inactive)
+    useEffect(() => {
+        if (!autoRefresh) return
+
+        let timer: ReturnType<typeof setInterval>
+
+        const start = () => {
+            timer = setInterval(() => {
+                if (!document.hidden) {
+                    fetchDashboard(dateRange[0], dateRange[1], true)
+                }
+            }, AUTO_REFRESH_MS)
+        }
+
+        const handleVisibility = () => {
+            clearInterval(timer)
+            if (!document.hidden) start()
+        }
+
+        start()
+        document.addEventListener('visibilitychange', handleVisibility)
+
+        return () => {
+            clearInterval(timer)
+            document.removeEventListener('visibilitychange', handleVisibility)
+        }
+    }, [autoRefresh, dateRange, fetchDashboard])
+
+    useEffect(() => {
+        isMountedRef.current = true
+        return () => { isMountedRef.current = false }
+    }, [])
+
+    const handlePreset = (key: PresetKey) => {
+        setPreset(key)
+        if (key !== 'custom') {
+            setDateRange(getPresetRange(key))
+        }
+    }
+
+    const handleCustomApply = () => {
+        if (customStart && customEnd) {
+            setDateRange([customStart, customEnd])
+        }
+    }
 
     // ── Chart data ───────────────────────────────────────────────
     const salesChartSeries = useMemo(() => {
@@ -169,24 +278,24 @@ const Dashboard = () => {
                 iconBg: 'bg-indigo-50 text-indigo-500 dark:bg-indigo-500/20',
             },
             {
-                title: 'ยอดขายเดือนนี้',
-                value: `฿${fmtShort(s.month_sales)}`,
-                change: pctChange(s.month_sales, s.prev_month_sales),
-                sub: `${s.month_orders} ออเดอร์`,
+                title: 'ยอดขาย (ช่วงที่เลือก)',
+                value: `฿${fmtShort(s.range_sales)}`,
+                change: pctChange(s.range_sales, s.prev_range_sales),
+                sub: `${s.range_orders} ออเดอร์`,
                 icon: <PiReceiptDuotone className="text-2xl" />,
                 iconBg: 'bg-emerald-50 text-emerald-500 dark:bg-emerald-500/20',
             },
             {
-                title: 'จำนวนออเดอร์เดือนนี้',
-                value: s.month_orders.toLocaleString(),
-                change: pctChange(s.month_orders, s.prev_month_orders),
+                title: 'จำนวนออเดอร์ (ช่วงที่เลือก)',
+                value: s.range_orders.toLocaleString(),
+                change: pctChange(s.range_orders, s.prev_range_orders),
                 icon: <PiShoppingCartDuotone className="text-2xl" />,
                 iconBg: 'bg-amber-50 text-amber-500 dark:bg-amber-500/20',
             },
             {
-                title: 'สมาชิกใหม่เดือนนี้',
-                value: s.new_customers_month.toLocaleString(),
-                change: pctChange(s.new_customers_month, s.prev_new_customers_month),
+                title: 'สมาชิกใหม่ (ช่วงที่เลือก)',
+                value: s.new_customers.toLocaleString(),
+                change: pctChange(s.new_customers, s.prev_new_customers),
                 icon: <PiUserPlusDuotone className="text-2xl" />,
                 iconBg: 'bg-sky-50 text-sky-500 dark:bg-sky-500/20',
             },
@@ -220,6 +329,73 @@ const Dashboard = () => {
 
     return (
         <div className="flex flex-col gap-4">
+            {/* ── Date Filter Toolbar ── */}
+            <div className="card card-shadow p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                    <PiCalendarBlankDuotone className="text-lg text-indigo-500" />
+                    <div className="flex flex-wrap gap-1.5">
+                        {presetButtons.map((btn) => (
+                            <button
+                                key={btn.key}
+                                onClick={() => handlePreset(btn.key)}
+                                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                                    preset === btn.key
+                                        ? 'bg-indigo-500 text-white'
+                                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600'
+                                }`}
+                            >
+                                {btn.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    {preset === 'custom' && (
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="date"
+                                value={customStart}
+                                onChange={(e) => setCustomStart(e.target.value)}
+                                className="border border-gray-300 dark:border-gray-600 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-gray-800"
+                            />
+                            <span className="text-xs text-gray-400">—</span>
+                            <input
+                                type="date"
+                                value={customEnd}
+                                onChange={(e) => setCustomEnd(e.target.value)}
+                                className="border border-gray-300 dark:border-gray-600 rounded-lg px-2.5 py-1.5 text-xs bg-white dark:bg-gray-800"
+                            />
+                            <button
+                                onClick={handleCustomApply}
+                                disabled={!customStart || !customEnd}
+                                className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-500 text-white disabled:opacity-40"
+                            >
+                                ค้นหา
+                            </button>
+                        </div>
+                    )}
+
+                    <div className="ml-auto flex items-center gap-3">
+                        <button
+                            onClick={() => setAutoRefresh((v) => !v)}
+                            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors ${
+                                autoRefresh
+                                    ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-500/20'
+                                    : 'bg-gray-100 text-gray-500 dark:bg-gray-700 dark:text-gray-400'
+                            }`}
+                        >
+                            <PiArrowsClockwiseDuotone className={autoRefresh ? 'animate-spin' : ''} />
+                            {autoRefresh ? 'Auto' : 'หยุด'}
+                        </button>
+                        <span className="text-[10px] text-gray-400">
+                            อัพเดท {lastRefreshed.toLocaleTimeString('th-TH')}
+                        </span>
+                    </div>
+                </div>
+                <div className="mt-2 text-xs text-gray-400">
+                    ช่วงข้อมูล: {dateRange[0]} — {dateRange[1]}
+                </div>
+            </div>
+
             {/* ── Row 1: Summary Cards ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 {summaryCards.map((card) => (
@@ -244,7 +420,7 @@ const Dashboard = () => {
                                         <PiTrendDownDuotone />
                                     )}
                                     {card.change >= 0 ? '+' : ''}
-                                    {card.change.toFixed(1)}% จากเดือนก่อน
+                                    {card.change.toFixed(1)}% จากช่วงก่อนหน้า
                                 </p>
                             )}
                             {card.sub && (
@@ -267,7 +443,7 @@ const Dashboard = () => {
                 <div className="xl:col-span-2 card card-shadow">
                     <div className="flex items-center justify-between px-5 pt-5 pb-1">
                         <h6 className="font-bold text-gray-900 dark:text-gray-100">
-                            ยอดขายรายวัน (30 วัน)
+                            ยอดขายรายวัน
                         </h6>
                     </div>
                     <ReactApexChart
@@ -303,7 +479,7 @@ const Dashboard = () => {
                     <div className="flex items-center gap-2 px-5 py-4">
                         <PiShoppingBagDuotone className="text-lg text-indigo-500" />
                         <h6 className="font-bold text-gray-900 dark:text-gray-100">
-                            สินค้าขายดีเดือนนี้
+                            สินค้าขายดี (ช่วงที่เลือก)
                         </h6>
                     </div>
                     <div className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -343,7 +519,7 @@ const Dashboard = () => {
                     <div className="flex items-center gap-2 px-5 py-4">
                         <PiStorefrontDuotone className="text-lg text-indigo-500" />
                         <h6 className="font-bold text-gray-900 dark:text-gray-100">
-                            ยอดขายแยกสาขา (เดือนนี้)
+                            ยอดขายแยกสาขา (ช่วงที่เลือก)
                         </h6>
                     </div>
                     {branchBarSeries[0].data.length > 0 ? (
@@ -368,7 +544,7 @@ const Dashboard = () => {
                     <div className="flex items-center gap-2 px-5 py-4">
                         <PiCrownDuotone className="text-lg text-amber-500" />
                         <h6 className="font-bold text-gray-900 dark:text-gray-100">
-                            ลูกค้ายอดซื้อสูงสุด (เดือนนี้)
+                            ลูกค้ายอดซื้อสูงสุด (ช่วงที่เลือก)
                         </h6>
                     </div>
                     <div className="overflow-x-auto">
@@ -426,7 +602,7 @@ const Dashboard = () => {
                                             colSpan={5}
                                             className="px-5 py-6 text-center text-gray-400"
                                         >
-                                            ยังไม่มีข้อมูลเดือนนี้
+                                            ยังไม่มีข้อมูล
                                         </td>
                                     </tr>
                                 )}

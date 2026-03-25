@@ -5,12 +5,12 @@ const API_PREFIX = 'api/v2/dashboard'
 export type DashboardSummary = {
     today_sales: number
     today_orders: number
-    month_sales: number
-    month_orders: number
-    prev_month_sales: number
-    prev_month_orders: number
-    new_customers_month: number
-    prev_new_customers_month: number
+    range_sales: number
+    range_orders: number
+    prev_range_sales: number
+    prev_range_orders: number
+    new_customers: number
+    prev_new_customers: number
 }
 
 export type DailySalesPoint = {
@@ -98,9 +98,13 @@ export type DashboardResponse = {
     fraud_alerts: FraudAlertSection
 }
 
-export async function apiGetDashboard() {
+export async function apiGetDashboard(startDate?: string, endDate?: string) {
+    const params = new URLSearchParams()
+    if (startDate) params.set('start_date', startDate)
+    if (endDate) params.set('end_date', endDate)
+    const qs = params.toString()
     return ApiService.fetchData<DashboardResponse>({
-        url: API_PREFIX,
+        url: qs ? `${API_PREFIX}?${qs}` : API_PREFIX,
         method: 'get',
     })
 }
