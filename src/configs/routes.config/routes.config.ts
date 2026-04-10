@@ -91,6 +91,18 @@ export const protectedRoutes: Routes = [
         authority: ['ingredient:view'],
     },
     {
+        key: 'costCalculation.productionRecipes',
+        path: '/cost/production-recipes',
+        component: lazy(() => import('@/views/cost/ProductionRecipeList')),
+        authority: ['production_recipes:view'],
+    },
+    {
+        key: 'costCalculation.productCostProfiles',
+        path: '/cost/product-cost-profiles',
+        component: lazy(() => import('@/views/cost/ProductCostProfileList')),
+        authority: ['product_cost_profiles:view'],
+    },
+    {
         key: 'costCalculation.productCost',
         path: '/cost/product-cost',
         component: lazy(() => import('@/views/cost/ProductCostList')),

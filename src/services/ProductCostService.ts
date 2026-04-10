@@ -26,6 +26,25 @@ export type ProductCostSummary = {
     profit: number
     margin_percent: number
     items?: ProductIngredientItem[]
+    
+    cost_mode: 'DIRECT' | 'BATCH'
+    production_recipe_id?: number
+    recipe_name?: string
+    base_usage_qty: number
+    batch_cost_per_unit: number
+    batch_base_cost: number
+    packaging_cost: number
+}
+
+export type ProductCostProfile = {
+    id: number
+    store_id: number
+    product_id: number
+    cost_mode: 'DIRECT' | 'BATCH'
+    production_recipe_id?: number
+    base_usage_qty: number
+    created_at: string
+    updated_at: string
 }
 
 export async function apiListProductsWithCost(params?: {
@@ -73,5 +92,25 @@ export async function apiDeleteProductIngredient(id: number) {
     return ApiService.fetchData<{ message: string }>({
         url: `${API_PREFIX}/items/${id}`,
         method: 'delete',
+    })
+}
+
+export async function apiGetCostProfile(productId: number) {
+    return ApiService.fetchData<ProductCostProfile>({
+        url: `${API_PREFIX}/profiles/${productId}`,
+        method: 'get',
+    })
+}
+
+export async function apiUpsertCostProfile(data: {
+    product_id: number
+    cost_mode: 'DIRECT' | 'BATCH'
+    production_recipe_id?: number
+    base_usage_qty: number
+}) {
+    return ApiService.fetchData<{ message: string }>({
+        url: `${API_PREFIX}/profiles`,
+        method: 'post',
+        data,
     })
 }
